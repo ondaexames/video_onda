@@ -1,0 +1,175 @@
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export const rooms = sqliteTable("rooms", {
+  id: text("id").primaryKey(),
+  hostTokenHash: text("host_token_hash").notNull(),
+  guestTokenHash: text("guest_token_hash").notNull(),
+  patientName: text("patient_name").notNull(),
+  tutorName: text("tutor_name").notNull(),
+  professionalName: text("professional_name").notNull(),
+  status: text("status").notNull().default("waiting"),
+  createdAt: integer("created_at").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+});
+
+export const signals = sqliteTable("signals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: "cascade" }),
+  senderId: text("sender_id").notNull(),
+  role: text("role").notNull(),
+  kind: text("kind").notNull(),
+  payload: text("payload").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const consultationRecords = sqliteTable("consultation_records", {
+  id: text("id").primaryKey(),
+  roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: "cascade" }),
+  patientName: text("patient_name").notNull(),
+  tutorName: text("tutor_name").notNull(),
+  tutorDocument: text("tutor_document").notNull().default(""),
+  tutorAddress: text("tutor_address").notNull().default(""),
+  professionalName: text("professional_name").notNull(),
+  professionalCrmv: text("professional_crmv").notNull().default(""),
+  unitName: text("unit_name").notNull(),
+  serviceName: text("service_name").notNull(),
+  species: text("species").notNull(),
+  sex: text("sex").notNull().default(""),
+  breed: text("breed").notNull().default(""),
+  coat: text("coat").notNull().default(""),
+  age: text("age").notNull().default(""),
+  weight: text("weight").notNull().default(""),
+  rpvarValid: integer("rpvar_valid", { mode: "boolean" }).notNull().default(true),
+  chiefComplaint: text("chief_complaint").notNull().default(""),
+  anamnesis: text("anamnesis").notNull().default(""),
+  clinicalFindings: text("clinical_findings").notNull().default(""),
+  diagnosis: text("diagnosis").notNull().default(""),
+  treatmentPlan: text("treatment_plan").notNull().default(""),
+  prescription: text("prescription").notNull().default(""),
+  examRequests: text("exam_requests").notNull().default(""),
+  referral: text("referral").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  status: text("status").notNull().default("draft"),
+  startedAt: integer("started_at"),
+  endedAt: integer("ended_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const clients = sqliteTable("clients", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  cpf: text("cpf").notNull().default(""),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull(),
+  address: text("address").notNull().default(""),
+  asaasCustomerId: text("asaas_customer_id").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const pets = sqliteTable("pets", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  species: text("species").notNull(),
+  sex: text("sex").notNull().default(""),
+  breed: text("breed").notNull().default(""),
+  coat: text("coat").notNull().default(""),
+  age: text("age").notNull().default(""),
+  weight: text("weight").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const availabilitySlots = sqliteTable("availability_slots", {
+  id: text("id").primaryKey(),
+  startsAt: integer("starts_at").notNull(),
+  endsAt: integer("ends_at").notNull(),
+  professionalName: text("professional_name").notNull(),
+  professionalCrmv: text("professional_crmv").notNull().default(""),
+  unitName: text("unit_name").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  status: text("status").notNull().default("open"),
+  source: text("source").notNull().default("manual"),
+  blockReason: text("block_reason").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull().default(0),
+});
+
+export const scheduleAudit = sqliteTable("schedule_audit", {
+  id: text("id").primaryKey(),
+  slotId: text("slot_id").notNull().default(""),
+  action: text("action").notNull(),
+  reason: text("reason").notNull().default(""),
+  actor: text("actor").notNull(),
+  startsAt: integer("starts_at").notNull(),
+  endsAt: integer("ends_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const scheduleSettings = sqliteTable("schedule_settings", {
+  id: text("id").primaryKey(),
+  professionalName: text("professional_name").notNull(),
+  professionalCrmv: text("professional_crmv").notNull().default(""),
+  unitName: text("unit_name").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  durationMinutes: integer("duration_minutes").notNull().default(30),
+  horizonDays: integer("horizon_days").notNull().default(30),
+  weeklyJson: text("weekly_json").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const appointments = sqliteTable("appointments", {
+  id: text("id").primaryKey(),
+  publicToken: text("public_token").notNull(),
+  publicTokenHash: text("public_token_hash").notNull(),
+  clientId: text("client_id").notNull().references(() => clients.id),
+  petId: text("pet_id").notNull().references(() => pets.id),
+  slotId: text("slot_id").notNull().references(() => availabilitySlots.id),
+  roomId: text("room_id").references(() => rooms.id),
+  guestToken: text("guest_token").notNull().default(""),
+  chiefComplaint: text("chief_complaint").notNull().default(""),
+  bookingSource: text("booking_source").notNull().default("site"),
+  serviceType: text("service_type").notNull().default("Consulta por vídeo"),
+  rpvarValid: integer("rpvar_valid", { mode: "boolean" }).notNull().default(false),
+  status: text("status").notNull().default("scheduled"),
+  paymentStatus: text("payment_status").notNull().default("pending"),
+  cancellationRequestedAt: integer("cancellation_requested_at"),
+  cancellationRequestReason: text("cancellation_request_reason").notNull().default(""),
+  cancelledAt: integer("cancelled_at"),
+  cancelledBy: text("cancelled_by").notNull().default(""),
+  cancellationReason: text("cancellation_reason").notNull().default(""),
+  slotReopened: integer("slot_reopened", { mode: "boolean" }).notNull().default(false),
+  refundStatus: text("refund_status").notNull().default("not_required"),
+  refundedAt: integer("refunded_at"),
+  refundReference: text("refund_reference").notNull().default(""),
+  asaasPaymentId: text("asaas_payment_id").notNull().default(""),
+  pixPayload: text("pix_payload").notNull().default(""),
+  pixImage: text("pix_image").notNull().default(""),
+  invoiceUrl: text("invoice_url").notNull().default(""),
+  startedAt: integer("started_at"),
+  completedAt: integer("completed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const paymentEvents = sqliteTable("payment_events", {
+  eventId: text("event_id").primaryKey(),
+  paymentId: text("payment_id").notNull(),
+  eventType: text("event_type").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const prescriptionDocuments = sqliteTable("prescription_documents", {
+  id: text("id").primaryKey(),
+  roomId: text("room_id").notNull().references(() => rooms.id, { onDelete: "cascade" }),
+  objectKey: text("object_key").notNull(),
+  filename: text("filename").notNull(),
+  status: text("status").notNull().default("signed"),
+  publicTokenHash: text("public_token_hash").notNull(),
+  sentAt: integer("sent_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});

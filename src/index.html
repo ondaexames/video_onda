@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f4f5f6" />
+  <meta name="description" content="Consulta veterinária por vídeo da Clínica Onda Animal." />
+  <title>Onda Animal • Consulta por vídeo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f2ea;
+      --panel: #ffffff;
+      --panel-2: #f2f5f8;
+      --panel-3: #e4ebf0;
+      --line: #dfe3e6;
+      --text: #263746;
+      --muted: #687681;
+      --cyan: #315f7a;
+      --cyan-2: #23485e;
+      --green: #2c9169;
+      --accent: #df765e;
+      --amber: #c47a31;
+      --danger: #c33f46;
+      --shadow: 0 14px 36px rgba(36, 58, 73, .10);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      font-size: 16px;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(53, 67, 74, .28);
+      outline-offset: 2px;
+    }
+
+    .app-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+    .topbar {
+      min-height: 68px;
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .96);
+      backdrop-filter: blur(14px);
+      position: relative;
+      z-index: 30;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 215px; }
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      color: #fff;
+      background: #35434a;
+      box-shadow: 0 8px 20px rgba(38, 50, 56, .18);
+    }
+    .brand strong { display: block; font-size: 17px; letter-spacing: -.02em; }
+    .brand span { color: var(--muted); font-size: 13px; }
+
+    .role-switch {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel-2);
+    }
+    .role-switch button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      padding: 8px 16px;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 750;
+    }
+    .role-switch button.active {
+      color: #fff;
+      background: var(--cyan);
+      box-shadow: 0 6px 16px rgba(38, 50, 56, .16);
+    }
+
+    .user-pill { display: flex; align-items: center; gap: 10px; }
+    .user-copy { text-align: right; }
+    .user-copy strong { display: block; font-size: 14px; }
+    .user-copy span { color: var(--muted); font-size: 12px; }
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 850;
+      color: #fff;
+      background: #5f6b70;
+      border: 2px solid #d9dfe2;
+    }
+
+    main { width: 100%; max-width: 1920px; margin: 0 auto; padding: 14px 18px 18px; flex: 1; min-height: 0; }
+    .view { display: none; }
+    .view.active { display: block; height: 100%; animation: rise .28s ease-out; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .pro-grid {
+      display: grid;
+      grid-template-columns: 260px minmax(470px, 1fr) 400px;
+      gap: 14px;
+      height: 100%;
+      min-height: 0;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-head h2, .card-head h3 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--green);
+      background: #edf7f1;
+      border: 1px solid #cae6d6;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(47,125,91,.1); }
+
+    .date-block { padding: 16px 18px 12px; }
+    .date-block strong { font-size: 22px; display: block; letter-spacing: -.04em; }
+    .date-block span { color: var(--muted); font-size: 13px; }
+    .queue { padding: 4px 10px 14px; display: grid; align-content: start; gap: 8px; overflow-y: auto; min-height: 0; }
+    .queue-card { display: flex; flex-direction: column; min-height: 0; }
+    .queue-item {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 10px;
+      width: 100%;
+      padding: 12px;
+      text-align: left;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .queue-item:hover { background: var(--panel-2); }
+    .queue-item.active { border-color: #b8c1c5; background: #eef1f2; }
+    .queue-time { font-size: 14px; font-weight: 850; color: #59646a; padding-top: 2px; }
+    .queue-item strong { display: block; font-size: 15px; }
+    .queue-item small { color: var(--muted); display: block; margin-top: 3px; font-size: 12px; }
+    .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--amber); font-size: 12px; font-weight: 760; }
+    .status.online { color: var(--green); }
+    .status.later { color: #7c858a; }
+
+    .video-card { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; }
+    .session-bar {
+      min-height: 66px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .patient { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .pet-avatar {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: #eef1f2;
+      color: #35434a;
+      font-size: 20px;
+    }
+    .patient strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .patient span { color: var(--muted); font-size: 13px; }
+    .session-state { text-align: right; }
+    .session-state strong { display: block; color: var(--green); font-size: 14px; }
+    .session-state span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+    .stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255, 255, 255, .08), transparent 50%),
+        linear-gradient(150deg, #242a2e, #15191c 70%);
+    }
+    .remote-placeholder { text-align: center; max-width: 410px; padding: 28px; }
+    .remote-avatar {
+      width: 106px;
+      height: 106px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 34px;
+      font-weight: 900;
+      background: linear-gradient(145deg, #65747b, #35434a);
+      box-shadow: 0 0 0 10px rgba(255,255,255,.04), 0 20px 50px rgba(0,0,0,.28);
+    }
+    .remote-placeholder h1 { margin: 0 0 8px; font-size: clamp(23px, 3vw, 33px); letter-spacing: -.04em; }
+    .remote-placeholder h1 { color: #fff; }
+    .remote-placeholder p { margin: 0; color: #b7c0c4; line-height: 1.5; }
+    .pulse-line { display: none; justify-content: center; align-items: center; gap: 4px; margin-top: 19px; height: 24px; }
+    .pulse-line.active { display: flex; }
+    .pulse-line i { width: 4px; height: 9px; border-radius: 9px; background: var(--cyan); animation: voice .8s ease-in-out infinite alternate; }
+    .pulse-line i:nth-child(2) { animation-delay: -.3s; height: 17px; }
+    .pulse-line i:nth-child(3) { animation-delay: -.55s; height: 23px; }
+    .pulse-line i:nth-child(4) { animation-delay: -.15s; height: 14px; }
+    .pulse-line i:nth-child(5) { animation-delay: -.42s; }
+    @keyframes voice { to { transform: scaleY(.35); opacity: .55; } }
+
+    #localVideo, #clientVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #07121d;
+    }
+    #remoteVideo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #07121d;
+      display: none;
+    }
+    #remoteVideo.active { display: block; }
+    #localWrap {
+      width: min(25%, 235px);
+      aspect-ratio: 4 / 3;
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      border-radius: 15px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,.18);
+      box-shadow: 0 16px 38px rgba(0,0,0,.38);
+      display: none;
+      z-index: 3;
+    }
+    #localWrap.active { display: block; }
+    #localWrap span { position: absolute; left: 9px; bottom: 8px; padding: 4px 7px; border-radius: 7px; background: rgba(0,0,0,.54); font-size: 11px; }
+
+    .controls {
+      min-height: 70px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .round-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #f1f3f4;
+      cursor: pointer;
+      font-size: 19px;
+    }
+    .round-btn:hover { background: var(--panel-3); transform: translateY(-1px); }
+    .round-btn.off { background: rgba(255,107,115,.14); border-color: rgba(255,107,115,.28); }
+    .call-btn {
+      min-height: 50px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 16px;
+      cursor: pointer;
+      background: var(--cyan);
+      color: #fff;
+      font-weight: 900;
+      box-shadow: 0 8px 20px rgba(38,50,56,.16);
+    }
+    .call-btn.danger { background: var(--danger); color: #fff; }
+    .call-btn.cancel-action { background: #fff3f0; color: #a33a2c; border: 1px solid #f0b8ae; }
+    .call-btn:disabled, .primary-wide:disabled, .secondary-wide:disabled { opacity: .58; cursor: not-allowed; }
+    .invite-panel {
+      padding: 12px 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: #f7f8f8;
+    }
+    .invite-panel input { min-width: 0; padding: 10px 12px; font-size: 13px; }
+    .invite-panel button { flex: 0 0 auto; min-height: 42px; padding: 0 14px; }
+    .connection-badge { color: var(--amber); }
+    .connection-badge.connected { color: var(--green); }
+
+    .record-card { display: flex; flex-direction: column; min-height: 0; }
+    .record-body { padding: 15px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; min-height: 0; }
+    .info-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .datum { padding: 10px 11px; border-radius: 12px; background: #f3f5f6; }
+    .datum span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .datum strong { display: block; margin-top: 4px; font-size: 14px; }
+    label { display: grid; gap: 7px; color: #3d464b; font-size: 13px; font-weight: 750; }
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: #fff;
+      padding: 12px;
+    }
+    textarea { resize: vertical; min-height: 78px; line-height: 1.45; }
+    select option { color: #102033; background: white; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .new-appointment {
+      min-height: 36px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--cyan);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .queue-empty { padding: 18px 14px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .clinical-section { display: grid; gap: 7px; }
+    .clinical-section + .clinical-section { padding-top: 4px; }
+    .clinical-section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #30373b; font-size: 13px; font-weight: 850; }
+    .clinical-section-title span { color: var(--muted); font-size: 11px; font-weight: 650; }
+    .save-bar { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 0 -2px -2px; padding: 14px 2px 2px; background: linear-gradient(0deg, #fff 76%, rgba(255,255,255,0)); }
+    .save-state { align-self: center; color: var(--muted); font-size: 12px; }
+    .save-state.saved { color: var(--green); }
+    .save-record { min-height: 44px; padding: 0 15px; border: 0; border-radius: 12px; color: #fff; background: var(--cyan); font-weight: 900; cursor: pointer; }
+    .check-input { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .check-input input { width: 19px; height: 19px; accent-color: var(--cyan); }
+    .record-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .document-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .document-actions .primary-document { color: #fff; background: var(--cyan); border-color: var(--cyan); }
+    .document-actions .full { grid-column: 1 / -1; }
+    .soft-btn {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 760;
+      font-size: 13px;
+    }
+    .soft-btn:hover { border-color: #aeb8bd; background: #f1f3f4; }
+    .soft-btn.full { grid-column: 1 / -1; }
+    .legal-note {
+      padding: 11px 12px;
+      border-radius: 12px;
+      color: #76501c;
+      background: #fff8eb;
+      border: 1px solid #f1dfbb;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .client-shell { height: 100%; min-height: 0; display: grid; place-items: center; padding: 0; }
+    .client-layout { width: min(1100px, 100%); display: grid; grid-template-columns: 1.1fr .9fr; overflow: hidden; }
+    .client-preview { min-height: 560px; position: relative; background: #1b2023; display: grid; place-items: center; }
+    .client-preview video { position: absolute; inset: 0; }
+    .client-remote {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      background: #07121d;
+    }
+    .client-remote.active { display: block; }
+    .client-self {
+      position: absolute !important;
+      width: min(30%, 190px) !important;
+      height: auto !important;
+      aspect-ratio: 4 / 3;
+      right: 14px !important;
+      bottom: 14px !important;
+      left: auto !important;
+      top: auto !important;
+      z-index: 3;
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.18);
+      box-shadow: 0 12px 34px rgba(0,0,0,.35);
+    }
+    .camera-empty { text-align: center; color: var(--muted); padding: 28px; }
+    .camera-empty .camera-icon { width: 76px; height: 76px; border-radius: 24px; display: grid; place-items: center; margin: 0 auto 16px; font-size: 30px; background: var(--panel-2); color: var(--cyan); }
+    .camera-empty strong { display: block; color: var(--text); margin-bottom: 6px; }
+    .client-side { position: relative; padding: clamp(24px, 4vw, 42px); padding-bottom: clamp(118px, 14vw, 148px); background: linear-gradient(160deg, #fff 0%, #f5fbfa 100%); overflow: hidden; }
+    .client-pets { position: absolute; right: 18px; bottom: -8px; width: clamp(118px, 18vw, 185px); height: auto; pointer-events: none; filter: drop-shadow(0 12px 18px rgba(19,74,71,.16)); }
+    .client-mascot-caption { position: absolute; right: 172px; bottom: 28px; max-width: 150px; color: #48635f; text-align: right; font-size: 11px; line-height: 1.35; }
+    .client-mascot-caption strong { display: block; color: #174f49; font-size: 13px; }
+    .client-side .mini-brand { color: var(--cyan); font-weight: 900; letter-spacing: -.02em; }
+    .client-side h1 { margin: 20px 0 8px; font-size: clamp(27px, 4vw, 39px); line-height: 1.05; letter-spacing: -.05em; }
+    .client-side > p { color: var(--muted); line-height: 1.55; margin: 0 0 24px; }
+    .appointment { padding: 16px; border-radius: 15px; background: #f5f6f7; border: 1px solid var(--line); margin-bottom: 18px; }
+    .appointment-row { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; }
+    .appointment-row span { color: var(--muted); font-size: 13px; }
+    .appointment-row strong { text-align: right; font-size: 14px; }
+    .check-row { display: flex; align-items: center; gap: 10px; margin: 11px 0; color: #485157; font-size: 14px; }
+    .check { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 8px; display: grid; place-items: center; color: var(--green); background: rgba(73,219,150,.1); border: 1px solid rgba(73,219,150,.19); }
+    .client-actions { display: grid; gap: 10px; margin-top: 22px; }
+    .primary-wide, .secondary-wide {
+      min-height: 52px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+    .primary-wide { border: 0; color: #fff; background: var(--cyan); }
+    .secondary-wide { color: var(--text); border: 1px solid var(--line); background: #fff; }
+
+    .booking-shell { min-height: calc(100dvh - 114px); display: grid; place-items: center; padding: 22px 0; }
+    .booking-layout { width: min(1120px, 100%); display: grid; grid-template-columns: .88fr 1.12fr; overflow: hidden; }
+    .booking-intro { padding: clamp(28px, 5vw, 58px); color: #fff; background-color: #233f53; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='116' height='116' viewBox='0 0 116 116'%3E%3Cg fill='%23ffffff' fill-opacity='.055' transform='translate(25 25) rotate(-18)'%3E%3Cellipse cx='22' cy='38' rx='15' ry='12'/%3E%3Ccircle cx='8' cy='20' r='6'/%3E%3Ccircle cx='22' cy='14' r='6'/%3E%3Ccircle cx='37' cy='19' r='6'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(150deg, #2d536c, #1c3040); display: flex; flex-direction: column; justify-content: space-between; gap: 34px; }
+    .booking-intro h1 { margin: 18px 0 14px; max-width: 560px; font-size: clamp(34px, 5vw, 58px); line-height: .98; letter-spacing: -.055em; }
+    .booking-intro p { max-width: 560px; margin: 0; color: #c9d0d3; font-size: 16px; line-height: 1.65; }
+    .booking-trust { display: grid; gap: 12px; }
+    .booking-trust span { display: flex; align-items: center; gap: 10px; color: #e7ebed; font-size: 14px; }
+    .booking-trust i { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; color: #fff; background: rgba(255,255,255,.12); font-style: normal; }
+    .mascot-memory { display: grid; grid-template-columns: 112px 1fr; align-items: center; gap: 15px; margin-top: 24px; padding: 10px 15px 10px 7px; border: 1px solid rgba(255,255,255,.15); border-radius: 18px; background: rgba(255,255,255,.08); }
+    .mascot-memory img { width: 112px; height: 82px; object-fit: contain; filter: drop-shadow(0 8px 14px rgba(0,0,0,.2)); }
+    .mascot-memory strong, .mascot-memory span { display: block; }
+    .mascot-memory strong { color: #fff; font-size: 16px; }
+    .mascot-memory span { margin-top: 4px; color: #c9d9d6; font-size: 12px; line-height: 1.4; }
+    .schedule-panel { padding: clamp(26px, 4vw, 44px); background: #fff; }
+    .schedule-panel h2 { margin: 0 0 7px; font-size: 27px; letter-spacing: -.04em; }
+    .schedule-panel > p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+    .public-scheduler { display: grid; grid-template-columns: minmax(150px,.72fr) minmax(220px,1.28fr); gap: 14px; }
+    .scheduler-column { min-width: 0; }
+    .scheduler-label { display: block; margin-bottom: 9px; color: #536167; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+    .date-choice-list, .time-choice-list { display: grid; gap: 8px; max-height: 430px; overflow-y: auto; padding: 2px 4px 2px 2px; }
+    .date-choice { width: 100%; min-height: 58px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 13px; background: #fff; color: #263238; text-align: left; cursor: pointer; }
+    .date-choice strong, .date-choice span { display: block; }
+    .date-choice strong { font-size: 14px; }
+    .date-choice span { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .date-choice.active { border-color: #35434a; background: #35434a; color: #fff; }
+    .date-choice.active span { color: #d8dfe1; }
+    .slot-list { display: grid; gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+    .slot-day { margin: 13px 0 3px; color: #475258; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+    .slot-button { width: 100%; min-height: 68px; padding: 12px 14px; display: grid; grid-template-columns: 70px 1fr auto; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; text-align: left; cursor: pointer; }
+    .slot-button:hover { border-color: #99a5ab; background: #f7f8f8; }
+    .slot-time { font-size: 18px; font-weight: 900; }
+    .slot-meta strong, .slot-meta span { display: block; }
+    .slot-meta strong { font-size: 14px; }
+    .slot-meta span { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .slot-price { font-weight: 900; color: var(--green); }
+    .empty-schedule { padding: 34px 18px; border: 1px dashed #b9c1c5; border-radius: 15px; text-align: center; color: var(--muted); line-height: 1.55; }
+    .payment-box { text-align: center; }
+    .payment-box img { width: min(250px, 82vw); aspect-ratio: 1; object-fit: contain; margin: 4px auto 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 10px; }
+    .payment-price { margin: 8px 0 16px; font-size: 27px; font-weight: 950; letter-spacing: -.04em; }
+    .payment-status { margin: 14px 0; padding: 12px; border-radius: 12px; background: #f3f5f6; color: #4c575c; font-weight: 800; }
+    .payment-status.paid { color: var(--green); background: #edf7f1; }
+    .payment-next-steps { margin-top: 14px; padding: 16px; border: 1px solid #b9ddcf; border-radius: 14px; color: #245d4d; background: #f0faf6; text-align: left; }
+    .payment-next-steps strong, .payment-next-steps span { display: block; }
+    .payment-next-steps strong { font-size: 15px; }
+    .payment-next-steps span { margin-top: 6px; font-size: 13px; line-height: 1.5; }
+    .payment-test-note { display: none; margin: 0 0 12px; padding: 11px 12px; border: 1px solid #f0d493; border-radius: 12px; color: #765317; background: #fff8e7; font-size: 12px; font-weight: 800; }
+    .payment-test-note.show { display: block; }
+    .workflow-steps { display: grid; gap: 10px; margin: 16px 0; }
+    .workflow-step { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; padding: 12px; border-radius: 12px; background: #f5f6f7; }
+    .workflow-step b { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #35434a; color: #fff; }
+    .workflow-step strong, .workflow-step span { display: block; }
+    .workflow-step span { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .integration-badge { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 999px; color: #42604f; background: #edf7f1; border: 1px solid #cae6d6; font-size: 12px; font-weight: 850; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 80;
+      transform: translate(-50%, 22px);
+      opacity: 0;
+      pointer-events: none;
+      max-width: min(92vw, 540px);
+      padding: 13px 17px;
+      border-radius: 12px;
+      color: #fff;
+      background: #35434a;
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      font-weight: 800;
+      transition: .24s ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(31,37,40,.55);
+      backdrop-filter: blur(8px);
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(560px, 100%); max-height: calc(100vh - 36px); overflow: auto; border-radius: 20px; border: 1px solid var(--line); background: #fff; box-shadow: 0 30px 80px rgba(0,0,0,.22); padding: 24px; }
+    .modal.wide { width: min(820px, 100%); }
+    .modal-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; background: rgba(73,219,150,.11); color: var(--green); font-size: 25px; }
+    .modal h2 { margin: 18px 0 8px; font-size: 24px; letter-spacing: -.04em; }
+    .modal p { color: var(--muted); line-height: 1.5; margin: 0 0 20px; }
+    .booking-quick-modal { width: min(680px, 100%); }
+    .booking-quick-note { display: flex; align-items: center; gap: 10px; margin: -5px 0 18px; padding: 11px 13px; border-radius: 12px; color: #245c52; background: #edf8f5; font-size: 13px; font-weight: 800; }
+    .booking-quick-note span { width: 25px; height: 25px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--green); }
+    .booking-optional { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 14px; background: #fafcfc; overflow: hidden; }
+    .booking-optional summary { padding: 14px 16px; color: #344348; cursor: pointer; font-size: 14px; font-weight: 850; }
+    .booking-optional[open] summary { border-bottom: 1px solid var(--line); }
+    .booking-optional-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
+    .booking-optional-fields .full { grid-column: 1 / -1; }
+    .booking-privacy { margin-top: 2px; padding: 12px; border-radius: 12px; background: #f5f7f7; }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pin-input { text-align: center; letter-spacing: .35em; font-size: 24px; font-weight: 900; margin: 4px 0 14px; }
+    .error-text { min-height: 20px; color: var(--danger); font-size: 13px; margin: -5px 0 10px; }
+    .modal-section { margin: 20px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .modal-section h3 { margin: 0 0 12px; font-size: 16px; }
+    .prescription-note { margin: 14px 0; padding: 11px 12px; border: 1px solid #f1dfbb; border-radius: 12px; color: #76501c; background: #fff8eb; font-size: 12px; line-height: 1.45; }
+    .medicine-preview { min-height: 72px; margin-top: 12px; padding: 13px; border: 1px dashed #b7c0c4; border-radius: 12px; background: #f7f8f8; color: var(--muted); white-space: pre-wrap; line-height: 1.45; font-size: 13px; }
+
+    .queue, .record-body, .modal { scrollbar-width: thin; scrollbar-color: #b7bec2 transparent; }
+
+    /* Portal veterinário */
+    body.vet-mode { overflow: hidden; }
+    body.vet-mode > .app-shell > .topbar { display: none; }
+    body.vet-mode > .app-shell > main { max-width: none; padding: 0; }
+    body.vet-mode #professionalView { height: 100dvh; padding: 12px; }
+    .vet-portal { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: 252px 1fr; background: #f7f2ea; }
+    .vet-sidebar { background-color: #243f53; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cg fill='%23ffffff' fill-opacity='.045' transform='translate(24 25) rotate(-18)'%3E%3Cellipse cx='22' cy='38' rx='15' ry='12'/%3E%3Ccircle cx='8' cy='20' r='6'/%3E%3Ccircle cx='22' cy='14' r='6'/%3E%3Ccircle cx='37' cy='19' r='6'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(180deg, #294d66, #203747); color: #fff; padding: 22px 16px; display: flex; flex-direction: column; gap: 24px; }
+    .vet-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
+    .vet-brand .brand-mark { width: 44px; height: 44px; background: #fff; color: #263238; box-shadow: none; }
+    .vet-brand strong { display: block; font-size: 16px; }
+    .vet-brand span { display: block; margin-top: 2px; color: #aeb8bc; font-size: 12px; }
+    .vet-nav { display: grid; gap: 6px; }
+    .vet-nav button, .vet-nav a { width: 100%; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 13px; border: 0; border-radius: 11px; color: #d6dde0; background: transparent; text-decoration: none; cursor: pointer; font-weight: 700; text-align: left; }
+    .vet-nav button:hover, .vet-nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
+    .vet-nav .active { background: #fff; color: #263238; }
+    .nav-icon { width: 24px; text-align: center; font-size: 17px; }
+    .nav-chevron { margin-left: auto; color: #879398; }
+    .cadastro-subnav { display: none; padding: 4px 0 4px 49px; }
+    .cadastro-subnav.open { display: grid; gap: 2px; }
+    .cadastro-subnav button { min-height: 36px; padding: 0 10px; font-size: 13px; font-weight: 650; }
+    .vet-sidebar-foot { margin-top: auto; padding: 14px 8px 0; border-top: 1px solid rgba(255,255,255,.1); }
+    .sidebar-mascots { display: flex; align-items: center; gap: 8px; margin: -5px 0 14px; color: #dce9e6; }
+    .sidebar-mascots img { width: 68px; height: 49px; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.22)); }
+    .sidebar-mascots strong, .sidebar-mascots span { display: block; }
+    .sidebar-mascots strong { font-size: 12px; }
+    .sidebar-mascots span { margin-top: 2px; color: #93aaa5; font-size: 9px; line-height: 1.25; }
+    .vet-user { display: grid; grid-template-columns: 38px 1fr; gap: 10px; align-items: center; }
+    .vet-user .avatar { width: 38px; height: 38px; border: 0; background: #4b5b62; font-size: 13px; }
+    .vet-user strong, .vet-user span { display: block; }
+    .vet-user strong { font-size: 13px; }
+    .vet-user span { margin-top: 2px; color: #aeb8bc; font-size: 11px; }
+    .logout-button { margin-top: 12px; width: 100%; min-height: 38px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: transparent; color: #cbd3d6; cursor: pointer; }
+    .vet-workspace { min-width: 0; min-height: 100vh; height: 100dvh; overflow: auto; background-image: radial-gradient(circle at 18% 10%, rgba(223,118,94,.07), transparent 22%), radial-gradient(circle at 85% 26%, rgba(49,95,122,.07), transparent 24%); }
+    .vet-workspace-head { min-height: 76px; padding: 14px clamp(20px, 3vw, 42px); display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 12; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .vet-workspace-head h1 { margin: 0; font-size: 22px; letter-spacing: -.035em; }
+    .vet-workspace-head p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .vet-head-actions { display: flex; gap: 9px; }
+    .vet-page { display: none; padding: 28px clamp(20px, 3vw, 42px) 44px; }
+    .vet-page.active { display: block; animation: rise .2s ease-out; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-bottom: 22px; }
+    .summary-card { position: relative; padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(145deg, #fff, #f8fcfb); box-shadow: 0 10px 26px rgba(18,78,75,.07); overflow: hidden; }
+    .summary-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: linear-gradient(var(--cyan), var(--accent)); }
+    .summary-card::after { content: "🐾"; position: absolute; right: 13px; bottom: 8px; color: var(--accent); font-size: 25px; opacity: .14; transform: rotate(-15deg); }
+    .summary-card span { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .summary-card strong { display: block; margin-top: 9px; font-size: 28px; letter-spacing: -.05em; }
+    .summary-card small { display: block; margin-top: 5px; color: var(--muted); }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(280px,.75fr); gap: 18px; }
+    .portal-card { border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.97); box-shadow: 0 10px 30px rgba(18,78,75,.07); overflow: hidden; }
+    .portal-card-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .portal-card-head h2 { margin: 0; font-size: 16px; }
+    .portal-card-head span { color: var(--muted); font-size: 13px; }
+    .day-agenda { padding: 8px; }
+    .agenda-row { width: 100%; display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center; padding: 14px 12px; border: 0; border-bottom: 1px solid #edf0f1; background: transparent; text-align: left; cursor: pointer; }
+    .agenda-row:last-child { border-bottom: 0; }
+    .agenda-row:hover { background: #f6f8f8; border-radius: 12px; }
+    .agenda-row .agenda-time { color: #263238; font-size: 16px; font-weight: 850; }
+    .agenda-row strong { display: block; font-size: 15px; }
+    .agenda-row small { display: block; margin-top: 3px; color: var(--muted); }
+    .agenda-status { padding: 6px 9px; border-radius: 999px; color: #80601e; background: #fff7df; font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .agenda-status.paid { color: #236447; background: #eaf6ef; }
+    .agenda-status.cancelled { color: #9b3027; background: #fff0ed; }
+    .agenda-status.requested { color: #8a5a13; background: #fff5d8; }
+    .agenda-row.cancelled, .week-event.cancelled { border-color: #efc2ba; background: #fff7f5; opacity: .86; }
+    .queue-item.cancelled { border-color: #efc2ba; background: #fff7f5; }
+    .agenda-row.booked { margin: 6px 0; border: 1px solid #aac1ed; border-left: 6px solid #4778d0; border-radius: 13px; background: #edf3ff; }
+    .agenda-row.booked:hover { background: #e1ebff; }
+    .agenda-row.booked .agenda-time { color: #2e5aa8; }
+    .agenda-row.available { border: 1px dashed #72b6a4; border-bottom: 1px dashed #72b6a4; margin: 6px 0; border-radius: 13px; background: #f1fbf7; }
+    .agenda-row.available:hover { border-color: var(--cyan); background: #e5f7f1; transform: translateY(-1px); }
+    .agenda-row.available .agenda-status { color: #126b57; background: #d8f2e8; }
+    .portal-empty { padding: 44px 22px; text-align: center; color: var(--muted); line-height: 1.6; }
+    .next-list { padding: 10px 18px 18px; }
+    .next-item { padding: 13px 0; border-bottom: 1px solid #edf0f1; }
+    .next-item:last-child { border-bottom: 0; }
+    .next-item strong, .next-item span { display: block; }
+    .next-item strong { font-size: 14px; }
+    .next-item span { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .clinical-history { display: grid; gap: 10px; max-height: 440px; overflow: auto; padding: 2px 2px 8px; }
+    .clinical-history-record { border: 1px solid var(--line); border-radius: 14px; background: #fafcfc; overflow: hidden; }
+    .clinical-history-record summary { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; list-style: none; }
+    .clinical-history-record summary::-webkit-details-marker { display: none; }
+    .clinical-history-record summary strong, .clinical-history-record summary small { display: block; }
+    .clinical-history-record summary strong { font-size: 14px; }
+    .clinical-history-record summary small { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .clinical-history-record summary b { padding: 5px 8px; border-radius: 999px; color: #315f7a; background: #e9f1f6; font-size: 11px; }
+    .clinical-categories { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 0 14px 12px; }
+    .clinical-categories section { padding: 11px 12px; border-left: 4px solid var(--accent); border-radius: 9px; background: #fff; }
+    .clinical-categories strong { color: #4a5964; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .clinical-categories p { margin: 5px 0 0; color: #263746; white-space: pre-wrap; line-height: 1.45; font-size: 13px; }
+    .clinical-history-record > button { margin: 0 14px 14px; width: calc(100% - 28px); }
+    .week-board { display: grid; grid-template-columns: repeat(7, minmax(145px,1fr)); gap: 10px; min-width: 1080px; }
+    .week-scroll { overflow-x: auto; padding-bottom: 8px; }
+    .week-day { min-height: 360px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .week-day.today { border-color: #77858b; box-shadow: inset 0 3px #35434a; }
+    .week-day h3 { margin: 2px 0 12px; font-size: 14px; }
+    .week-day h3 span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 500; }
+    .week-event { width: 100%; margin-bottom: 8px; padding: 10px; border: 1px solid #e2e7e9; border-radius: 11px; background: #f7f9f9; text-align: left; cursor: pointer; }
+    .week-event strong, .week-event span { display: block; }
+    .week-event strong { font-size: 13px; }
+    .week-event span { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .week-event.booked { border-color: #a9c0ed; border-left: 5px solid #4778d0; background: #edf3ff; }
+    .week-event.booked strong { color: #2e5aa8; }
+    .week-event.available { border-style: dashed; border-color: #72b6a4; background: #f0faf6; }
+    .week-event.available strong { color: #176a59; }
+    .calendar-workspace { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(320px,.65fr); gap: 18px; margin-bottom: 18px; }
+    .calendar-toolbar { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .calendar-toolbar h2 { margin: 0; font-size: 18px; text-transform: capitalize; }
+    .calendar-nav { display: flex; gap: 8px; }
+    .calendar-nav button { min-width: 40px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 800; }
+    .calendar-nav button:hover { border-color: #8ca09c; background: #f4faf8; }
+    .calendar-legend { padding: 12px 18px 0; display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
+    .calendar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .calendar-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .calendar-dot.open { background: #32a37e; }
+    .calendar-dot.booked { background: #4778d0; }
+    .calendar-dot.blocked { background: #8d989d; }
+    .month-calendar { padding: 14px 18px 20px; display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 7px; }
+    .calendar-weekday { padding: 6px 2px; color: var(--muted); text-align: center; font-size: 12px; font-weight: 850; text-transform: uppercase; }
+    .calendar-day { position: relative; min-height: 92px; padding: 12px 9px 9px; overflow: hidden; border: 1px solid #e1e7e6; border-radius: 12px; background: #fff; text-align: left; cursor: pointer; }
+    .calendar-day::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; background: transparent; }
+    .calendar-day:hover { border-color: #75a99e; background: #f7fcfa; }
+    .calendar-day.has-open { border-color: #76c1aa; background: #e7f8f1; }
+    .calendar-day.has-open::before { background: #25966f; }
+    .calendar-day.has-booked { border-color: #8fabe0; background: #e8f0ff; }
+    .calendar-day.has-booked::before { background: #4778d0; }
+    .calendar-day.has-blocked { border-color: #d0a0a0; background: #faeded; }
+    .calendar-day.has-blocked::before { background: #b45f5f; }
+    .calendar-day.mixed { border-color: #9ca9ba; background: linear-gradient(135deg,#e8f8f1 0 50%,#e8f0ff 50% 100%); }
+    .calendar-day.mixed::before { background: linear-gradient(90deg,#25966f 0 34%,#4778d0 34% 67%,#b45f5f 67%); }
+    .calendar-day.outside { opacity: .38; }
+    .calendar-day.today { box-shadow: inset 0 0 0 2px #2d8d79; }
+    .calendar-day.selected { color: #fff; border-color: #174f49; background: #174f49; }
+    .calendar-day-number { display: block; font-size: 14px; font-weight: 900; }
+    .calendar-day-counts { margin-top: 10px; display: grid; gap: 4px; }
+    .calendar-day-counts span { font-size: 11px; font-weight: 750; }
+    .calendar-day-counts .open-count { color: #23785f; }
+    .calendar-day-counts .booked-count { color: #3c67af; }
+    .calendar-day-counts .blocked-count { color: #994848; }
+    .calendar-day.selected .calendar-day-counts span { color: #dcecea; }
+    .day-manager { min-height: 100%; }
+    .day-manager-actions { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-bottom: 1px solid var(--line); }
+    .day-manager-actions button { min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 800; }
+    .day-manager-actions .open-action { color: #fff; border-color: var(--cyan); background: var(--cyan); }
+    .day-manager-actions .day-action { grid-column: 1 / -1; color: #8a431f; border-color: #edc8b3; background: #fff8f3; }
+    .managed-day-list { padding: 8px 14px 16px; max-height: 540px; overflow: auto; }
+    .managed-slot { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 10px; margin: 8px 0; padding: 13px 11px; border: 1px solid #dfe7e5; border-left-width: 6px; border-radius: 12px; }
+    .managed-slot:last-child { border-bottom: 0; }
+    .managed-slot-time { font-size: 15px; font-weight: 900; }
+    .managed-slot strong, .managed-slot small { display: block; }
+    .managed-slot strong { font-size: 13px; }
+    .managed-slot small { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .managed-slot button { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; font-size: 12px; font-weight: 850; }
+    .managed-slot.open { border-color: #8fd0bb; border-left-color: #25966f; background: #e9f8f2; }
+    .managed-slot.open strong, .managed-slot.open .managed-slot-time { color: #176a59; }
+    .managed-slot.booked { border-color: #a6bde8; border-left-color: #4778d0; background: #edf3ff; }
+    .managed-slot.booked strong, .managed-slot.booked .managed-slot-time { color: #2e5aa8; }
+    .managed-slot.blocked { border-color: #d7aaaa; border-left-color: #b45f5f; background: #faeeee; }
+    .managed-slot.blocked strong, .managed-slot.blocked .managed-slot-time { color: #994848; }
+    .managed-slot.blocked button { color: #176a59; border-color: #b8ddcf; background: #f0faf6; }
+    .managed-slot.booked button { color: #52606a; cursor: default; background: #f1f3f4; }
+    .schedule-history { padding: 4px 18px 18px; display: grid; gap: 0; }
+    .history-row { display: grid; grid-template-columns: 116px 1fr auto; gap: 12px; padding: 12px 0; border-bottom: 1px solid #edf0f1; align-items: center; }
+    .history-row:last-child { border-bottom: 0; }
+    .history-row time, .history-row small { color: var(--muted); font-size: 12px; }
+    .history-row strong { display: block; font-size: 13px; }
+    .history-row span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .settings-layout { display: grid; gap: 18px; }
+    .settings-card { overflow: visible; }
+    .settings-body { padding: 20px; }
+    .weekly-settings { padding: 8px 20px 20px; display: grid; gap: 10px; }
+    .weekday-row { display: grid; grid-template-columns: 150px repeat(4, minmax(100px,1fr)); gap: 10px; align-items: end; padding: 13px 0; border-bottom: 1px solid #edf0f1; }
+    .weekday-row:last-child { border-bottom: 0; }
+    .weekday-toggle { min-height: 44px; display: flex; align-items: center; gap: 9px; font-weight: 800; }
+    .weekday-row label:not(.weekday-toggle) { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .weekday-row input[type="time"] { margin-top: 5px; }
+    .weekday-row.disabled { opacity: .55; }
+    .settings-save { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-top: 1px solid var(--line); }
+    .settings-save span { color: var(--muted); font-size: 13px; }
+    .registry-toolbar { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .registry-search { flex: 1; max-width: 430px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+    .registry-table { width: 100%; border-collapse: collapse; }
+    .registry-table th, .registry-table td { padding: 14px 18px; border-bottom: 1px solid #edf0f1; text-align: left; }
+    .registry-table th { color: var(--muted); background: #f7f9f9; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .registry-table td { font-size: 14px; }
+    .registry-table tr[data-client-id] { cursor: pointer; }
+    .registry-table tr[data-client-id]:hover td { background: #f8fafa; }
+    .consultation-back { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 750; }
+    .reminder-modal .reminder-clock { color: #263238; font-size: 34px; font-weight: 900; letter-spacing: -.06em; }
+    .reminder-card { margin: 16px 0 20px; padding: 16px; border-radius: 14px; background: #f1f4f4; }
+    .reminder-card strong, .reminder-card span { display: block; }
+    .reminder-card span { margin-top: 5px; color: var(--muted); }
+    .login-modal-backdrop { padding: 0; background: #edf0f1; }
+    .login-modal-backdrop.open { display: grid; }
+    .login-modal-backdrop .login-shell { width: min(980px, calc(100% - 36px)); display: grid; grid-template-columns: .9fr 1.1fr; padding: 0; overflow: hidden; border: 1px solid #d9dfe1; border-radius: 24px; background: #fff; box-shadow: 0 28px 80px rgba(32,41,45,.16); }
+    .login-brand-panel { padding: 52px 44px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; background-color: #263f52; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112' viewBox='0 0 112 112'%3E%3Cg fill='%23ffffff' fill-opacity='.05' transform='translate(25 25) rotate(-18)'%3E%3Cellipse cx='22' cy='38' rx='15' ry='12'/%3E%3Ccircle cx='8' cy='20' r='6'/%3E%3Ccircle cx='22' cy='14' r='6'/%3E%3Ccircle cx='37' cy='19' r='6'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(145deg,#2f566f,#213746); }
+    .login-brand-panel .brand-mark { background: #fff; color: #263238; box-shadow: none; }
+    .login-brand-panel h2 { margin: 34px 0 12px; max-width: 330px; font-size: 31px; line-height: 1.08; letter-spacing: -.05em; }
+    .login-brand-panel p { margin: 0; color: #c9d0d3; line-height: 1.6; }
+    .login-mascots { display: flex; align-items: center; gap: 12px; margin-top: 28px; padding: 11px 14px 11px 7px; border: 1px solid rgba(255,255,255,.13); border-radius: 16px; background: rgba(255,255,255,.07); }
+    .login-mascots img { width: 104px; height: 72px; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.22)); }
+    .login-mascots strong, .login-mascots span { display: block; }
+    .login-mascots strong { color: #fff; font-size: 14px; }
+    .login-mascots span { margin-top: 3px; color: #b8cbc7; font-size: 11px; }
+    .login-security { color: #aeb8bc; font-size: 12px; }
+    .login-form-panel { padding: 52px 54px; align-self: center; }
+    .login-form-panel h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -.04em; }
+    .login-form-panel > p { margin: 0 0 28px; color: var(--muted); }
+
+    @media (max-width: 980px) {
+      .vet-portal { grid-template-columns: 78px 1fr; }
+      .vet-brand > div:last-child, .vet-nav .nav-label, .vet-nav .nav-chevron, .cadastro-subnav, .vet-user > div:nth-child(2), .logout-button span { display: none; }
+      .vet-sidebar { padding: 18px 12px; }
+      .vet-nav button, .vet-nav a { justify-content: center; padding: 0; }
+      .vet-user { grid-template-columns: 1fr; justify-items: center; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      body.vet-mode { overflow: auto; }
+      .vet-portal { display: block; }
+      .vet-sidebar { position: sticky; top: 0; z-index: 20; padding: 10px 14px; flex-direction: row; align-items: center; }
+      .vet-brand { padding: 0; }
+      .vet-brand .brand-mark { width: 38px; height: 38px; }
+      .vet-nav { margin-left: auto; display: flex; }
+      .vet-nav button, .vet-nav a { width: 42px; min-height: 42px; }
+      .vet-sidebar-foot { display: none; }
+      .vet-workspace { height: auto; min-height: calc(100dvh - 58px); }
+      .vet-workspace-head { padding: 12px 16px; }
+      .vet-workspace-head h1 { font-size: 19px; }
+      .vet-page { padding: 18px 14px 32px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .agenda-row { grid-template-columns: 58px 1fr; }
+      .agenda-status { grid-column: 2; width: max-content; }
+      .login-modal-backdrop .login-shell { grid-template-columns: 1fr; }
+      .login-brand-panel { display: none; }
+      .login-form-panel { padding: 38px 28px; }
+      .weekday-row { grid-template-columns: 1fr 1fr; }
+      .weekday-toggle { grid-column: 1 / -1; }
+      .settings-save { align-items: stretch; flex-direction: column; }
+      .calendar-workspace { grid-template-columns: 1fr; }
+      .clinical-categories { grid-template-columns: 1fr; }
+    }
+    .queue::-webkit-scrollbar, .record-body::-webkit-scrollbar, .modal::-webkit-scrollbar { width: 8px; }
+    .queue::-webkit-scrollbar-thumb, .record-body::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb { background: #b7bec2; border-radius: 999px; }
+
+    @media (min-width: 1181px) {
+      body { overflow: hidden; }
+      .app-shell { height: 100vh; height: 100dvh; min-height: 0; }
+      main { overflow: hidden; }
+    }
+
+    @media (max-width: 1180px) {
+      body { overflow: auto; }
+      .app-shell { height: auto; min-height: 100vh; min-height: 100dvh; }
+      main { overflow: visible; }
+      .pro-grid { grid-template-columns: 240px minmax(430px, 1fr); height: auto; }
+      .record-card { grid-column: 1 / -1; }
+      .record-body { display: grid; grid-template-columns: .8fr 1.2fr; overflow: visible; }
+      .record-actions, .legal-note { grid-column: 1 / -1; }
+    }
+    @media (max-width: 820px) {
+      .topbar { align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; }
+      .role-switch { order: 3; width: 100%; }
+      .role-switch button { flex: 1; }
+      .user-copy { display: none; }
+      main { padding: 12px; }
+      .pro-grid { display: flex; flex-direction: column; min-height: auto; }
+      .queue-card { order: 2; }
+      .video-card { order: 1; min-height: 650px; }
+      .record-card { order: 3; }
+      .stage { min-height: 440px; }
+      .record-body { display: flex; }
+      .client-layout { grid-template-columns: 1fr; }
+      .client-preview { min-height: 360px; }
+      .booking-layout { grid-template-columns: 1fr; }
+      .booking-intro { min-height: 360px; }
+    }
+    @media (max-width: 520px) {
+      .brand span { display: none; }
+      .brand { min-width: 0; }
+      .brand-mark { width: 42px; height: 42px; }
+      .user-pill { display: none; }
+      .topbar { justify-content: center; }
+      .brand { margin-right: auto; }
+      .session-state { display: none; }
+      .stage { min-height: 390px; }
+      .controls { gap: 7px; padding-inline: 10px; flex-wrap: wrap; }
+      .round-btn { width: 46px; height: 46px; }
+      .call-btn { flex: 1; padding-inline: 12px; }
+      #localWrap { width: 37%; }
+      .record-actions { grid-template-columns: 1fr; }
+      .document-actions { grid-template-columns: 1fr; }
+      .document-actions .full { grid-column: auto; }
+      .soft-btn.full { grid-column: auto; }
+      .modal-actions { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: auto; }
+      .booking-optional { grid-column: auto; }
+      .booking-optional-fields { grid-template-columns: 1fr; }
+      .booking-optional-fields .full { grid-column: auto; }
+      .public-scheduler { grid-template-columns: 1fr; }
+      .date-choice-list { grid-template-columns: repeat(2, minmax(0,1fr)); max-height: 210px; }
+      .booking-shell { padding: 0; }
+      .booking-layout { border-radius: 0; }
+      .slot-button { grid-template-columns: 62px 1fr; }
+      .slot-price { grid-column: 2; }
+      .month-calendar { gap: 4px; padding-inline: 10px; }
+      .calendar-day { min-height: 70px; padding: 7px 5px; }
+      .calendar-day-counts { display: flex; gap: 4px; }
+      .calendar-day-counts span { width: 7px; height: 7px; border-radius: 50%; font-size: 0; }
+      .calendar-day-counts .open-count { background: #32a37e; }
+      .calendar-day-counts .booked-count { background: #4778d0; }
+      .calendar-day-counts .blocked-count { background: #8d989d; }
+      .calendar-day.selected .calendar-day-counts span { outline: 1px solid rgba(255,255,255,.7); }
+      .history-row { grid-template-columns: 1fr; gap: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">OA</div>
+        <div><strong>Onda Animal</strong><span>Vetcore • Teleatendimento</span></div>
+      </div>
+      <nav class="role-switch" aria-label="Escolher visão do sistema">
+        <button type="button" class="active" data-view="professional">Visão da equipe</button>
+        <button type="button" data-view="client">Visão do cliente</button>
+      </nav>
+      <a class="soft-btn" id="staffAccessLink" href="/vet" style="display:flex;align-items:center;padding:0 14px;text-decoration:none">Área veterinária</a>
+      <div class="user-pill" id="userPill">
+        <div class="user-copy"><strong>Dra. Bruna</strong><span>Unidade Gravataí</span></div>
+        <div class="avatar" aria-hidden="true">DB</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="view" id="bookingView">
+        <div class="booking-shell">
+          <div class="card booking-layout">
+            <div class="booking-intro">
+              <div>
+                <div class="integration-badge">Consulta veterinária por vídeo</div>
+                <h1>Cuidado veterinário, onde você estiver.</h1>
+                <p>Escolha um horário, cadastre seu pet e aguarde o chamado da veterinária. O pagamento é feito com Pix em ambiente seguro antes de entrar na sala.</p>
+                <div class="mascot-memory"><img src="__PET_CORNER_DATA_URL__" alt="Pri e Negão, mascotes da Onda Animal" /><div><strong>Pri &amp; Negão</strong><span>Nossos mascotes, para sempre parte da história da Onda Animal.</span></div></div>
+              </div>
+              <div class="booking-trust">
+                <span><i>1</i> Escolha um horário disponível</span>
+                <span><i>2</i> Receba o link pelo WhatsApp</span>
+                <span><i>3</i> Pague o Pix Banrisul e aguarde o WhatsApp</span>
+              </div>
+            </div>
+            <div class="schedule-panel">
+              <h2>Horários disponíveis</h2>
+              <p>São só dois passos: escolha o dia e toque no melhor horário.</p>
+              <div class="public-scheduler">
+                <div class="scheduler-column"><strong class="scheduler-label">1. Escolha o dia</strong><div class="date-choice-list" id="publicDateList"><div class="empty-schedule">Carregando datas...</div></div></div>
+                <div class="scheduler-column"><strong class="scheduler-label">2. Escolha o horário</strong><div class="time-choice-list" id="publicSlotList"><div class="empty-schedule">Selecione uma data.</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="vetPortalView">
+        <div class="vet-portal">
+          <aside class="vet-sidebar">
+            <div class="vet-brand">
+              <div class="brand-mark" aria-hidden="true">OA</div>
+              <div><strong>Onda Animal</strong><span>Gestão veterinária</span></div>
+            </div>
+            <nav class="vet-nav" aria-label="Navegação do sistema">
+              <button type="button" class="active" data-vet-route="dashboard"><span class="nav-icon">⌂</span><span class="nav-label">Início</span></button>
+              <button type="button" data-vet-route="agenda"><span class="nav-icon">▦</span><span class="nav-label">Agenda</span></button>
+              <button type="button" id="registryNavButton" data-vet-route="cadastros"><span class="nav-icon">♙</span><span class="nav-label">Cadastros</span><span class="nav-chevron">›</span></button>
+              <div class="cadastro-subnav" id="cadastroSubnav">
+                <button type="button" data-registry-target="clients">Tutores</button>
+                <button type="button" data-registry-target="pets">Animais</button>
+              </div>
+              <button type="button" data-vet-route="configuracoes"><span class="nav-icon">⚙</span><span class="nav-label">Configurações</span></button>
+            </nav>
+            <div class="vet-sidebar-foot">
+              <div class="sidebar-mascots"><img src="__PET_CORNER_DATA_URL__" alt="Pri e Negão" /><div><strong>Pri &amp; Negão</strong><span>Para sempre com a gente</span></div></div>
+              <div class="vet-user"><div class="avatar">DB</div><div><strong id="sidebarVetName">Dra. Bruna</strong><span id="sidebarVetCrmv">CRMV pendente</span></div></div>
+              <button class="logout-button" id="logoutButton" type="button"><span>Sair do sistema</span></button>
+            </div>
+          </aside>
+          <div class="vet-workspace">
+            <header class="vet-workspace-head">
+              <div><h1 id="vetPageTitle">Agenda de hoje</h1><p id="vetPageSubtitle">Acompanhe os atendimentos e inicie a próxima consulta.</p></div>
+              <div class="vet-head-actions">
+                <button class="soft-btn" id="portalAddSlot" type="button">Configurar horários</button>
+                <button class="new-appointment" id="portalNewClient" type="button">＋ Tutor</button>
+              </div>
+            </header>
+            <section class="vet-page active" id="dashboardPage">
+              <div class="summary-grid">
+                <div class="summary-card"><span>Consultas hoje</span><strong id="todayCount">0</strong><small id="todayCountText">Nenhum atendimento marcado</small></div>
+                <div class="summary-card"><span>Confirmadas</span><strong id="paidCount">0</strong><small>Pagamento identificado</small></div>
+                <div class="summary-card"><span>Próxima consulta</span><strong id="nextTime">—</strong><small id="nextPatient">Agenda livre</small></div>
+              </div>
+              <div class="dashboard-grid">
+                <div class="portal-card">
+                  <div class="portal-card-head"><div><h2>Atendimentos de hoje</h2><span id="dashboardDate"></span></div><button class="soft-btn" type="button" data-vet-route="agenda">Ver semana</button></div>
+                  <div class="day-agenda" id="todayAgenda"><div class="portal-empty">Carregando agenda...</div></div>
+                </div>
+                <aside class="portal-card">
+                  <div class="portal-card-head"><div><h2>Próximos atendimentos</h2><span>Depois de hoje</span></div></div>
+                  <div class="next-list" id="nextAppointments"><div class="portal-empty">Nenhum atendimento futuro.</div></div>
+                </aside>
+              </div>
+            </section>
+            <section class="vet-page" id="agendaPage">
+              <div class="calendar-workspace">
+                <div class="portal-card">
+                  <div class="calendar-toolbar">
+                    <div class="calendar-nav"><button id="calendarPrevious" type="button" aria-label="Mês anterior">‹</button><button id="calendarToday" type="button">Hoje</button></div>
+                    <h2 id="calendarMonthTitle">Calendário</h2>
+                    <div class="calendar-nav"><button id="calendarNext" type="button" aria-label="Próximo mês">›</button></div>
+                  </div>
+                  <div class="calendar-legend"><span><i class="calendar-dot open"></i>Livre</span><span><i class="calendar-dot booked"></i>Agendado</span><span><i class="calendar-dot blocked"></i>Fechado</span></div>
+                  <div class="month-calendar" id="monthCalendar"></div>
+                </div>
+                <aside class="portal-card day-manager">
+                  <div class="portal-card-head"><div><h2 id="selectedDayTitle">Selecione um dia</h2><span id="selectedDaySummary">Clique no calendário para gerenciar.</span></div></div>
+                  <div class="day-manager-actions">
+                    <button class="open-action" id="calendarOpenSlot" type="button">＋ Abrir horário</button>
+                    <button id="calendarBlockRange" type="button">Fechar período</button>
+                    <button class="day-action" id="calendarBlockDay" type="button">Fechar o dia inteiro</button>
+                  </div>
+                  <div class="managed-day-list" id="managedDayList"><div class="portal-empty">Nenhum dia selecionado.</div></div>
+                </aside>
+              </div>
+              <div class="portal-card">
+                <div class="portal-card-head"><div><h2>Próximos 7 dias</h2><span id="weekRange">Visão rápida da semana</span></div><button class="new-appointment" id="weekAddSlot" type="button">＋ Abrir horário</button></div>
+                <div class="week-scroll" style="padding:18px"><div class="week-board" id="weekBoard"></div></div>
+              </div>
+              <div class="portal-card" style="margin-top:18px">
+                <div class="portal-card-head"><div><h2>Histórico de alterações</h2><span>Aberturas, bloqueios e reaberturas do mês.</span></div></div>
+                <div class="schedule-history" id="scheduleHistory"><div class="portal-empty">Nenhuma alteração registrada neste mês.</div></div>
+              </div>
+            </section>
+            <section class="vet-page" id="cadastrosPage">
+              <div class="registry-toolbar">
+                <input class="registry-search" id="registrySearch" type="search" placeholder="Buscar tutor, telefone ou animal" />
+                <div class="vet-head-actions"><button class="soft-btn" id="newPetButton" type="button">＋ Animal</button><button class="new-appointment" id="newClientButton" type="button">＋ Tutor</button></div>
+              </div>
+              <div class="portal-card">
+                <div class="portal-card-head"><div><h2>Tutores e animais</h2><span>Abra um tutor para visualizar seus animais</span></div><span id="registryCount">0 cadastros</span></div>
+                <div style="overflow:auto"><table class="registry-table"><thead><tr><th>Tutor</th><th>Contato</th><th>Animais</th><th>Cadastrado em</th></tr></thead><tbody id="registryBody"></tbody></table></div>
+                <div class="portal-empty" id="registryEmpty">Nenhum tutor cadastrado.</div>
+              </div>
+            </section>
+            <section class="vet-page" id="configuracoesPage">
+              <form class="settings-layout" id="scheduleSettingsForm">
+                <div class="portal-card settings-card">
+                  <div class="portal-card-head"><div><h2>Agenda de atendimento</h2><span>Essas regras geram os horários que o tutor poderá escolher no site.</span></div></div>
+                  <div class="settings-body">
+                    <div class="form-grid">
+                      <label>Veterinária<input id="settingsProfessional" required /></label>
+                      <label>CRMV<input id="settingsCrmv" placeholder="CRMV-RS 00000" /></label>
+                      <label>Unidade<input id="settingsUnit" required /></label>
+                      <label>Valor da consulta<input id="settingsPrice" type="number" min="1" step="0.01" required /></label>
+                      <label>Duração<select id="settingsDuration"><option value="20">20 minutos</option><option value="30">30 minutos</option><option value="45">45 minutos</option><option value="60">60 minutos</option></select></label>
+                      <label>Disponibilidade futura<select id="settingsHorizon"><option value="14">14 dias</option><option value="30">30 dias</option><option value="45">45 dias</option><option value="60">60 dias</option></select></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="portal-card settings-card">
+                  <div class="portal-card-head"><div><h2>Dias e turnos</h2><span>Ative os dias e defina até dois períodos por dia.</span></div></div>
+                  <div class="weekly-settings" id="weeklySettings"></div>
+                  <div class="settings-save"><span id="settingsStatus">Os horários ocupados serão preservados.</span><button class="new-appointment" id="saveScheduleSettings" type="submit">Salvar e publicar horários</button></div>
+                </div>
+              </form>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="professionalView">
+        <div class="pro-grid">
+          <aside class="card queue-card">
+            <div class="card-head"><h2>Agenda</h2><button class="new-appointment" id="manageAvailabilityBtn" type="button">＋ Horário</button></div>
+            <div class="date-block"><strong id="todayLabel">Hoje</strong><span>Consultas e prontuários</span></div>
+            <div class="queue" id="consultationList">
+              <div class="queue-empty">Entre com seu e-mail e senha para visualizar a agenda.</div>
+            </div>
+          </aside>
+
+          <section class="card video-card">
+            <div class="session-bar">
+              <div class="patient">
+                <button class="consultation-back" id="backToDashboard" type="button" aria-label="Voltar para agenda">← Agenda</button>
+                <div class="pet-avatar" aria-hidden="true">🐾</div>
+                <div><strong id="headerPatient">Novo atendimento</strong><span id="headerTutor">Preencha os dados e crie a sala</span></div>
+              </div>
+              <div class="session-state"><strong id="proStatus">Cliente aguardando</strong><span id="timer">00:00</span></div>
+            </div>
+            <div class="stage">
+              <video id="remoteVideo" autoplay playsinline></video>
+              <div class="remote-placeholder" id="remotePlaceholder">
+                <div class="remote-avatar">JT</div>
+                <h1 id="remoteTitle">Crie a sala da consulta</h1>
+                <p id="remoteText">Gere o link e envie ao cliente. A chamada começa assim que ele entrar.</p>
+                <div class="pulse-line" id="voicePulse" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              </div>
+              <div id="localWrap"><video id="localVideo" autoplay playsinline muted></video><span>Você</span></div>
+            </div>
+            <div class="invite-panel" id="invitePanel">
+              <input id="inviteLink" aria-label="Link exclusivo do cliente" readonly placeholder="O link exclusivo do cliente aparecerá aqui" />
+              <button class="soft-btn" id="copyLinkBtn" type="button" disabled>Copiar link</button>
+            </div>
+            <div class="controls">
+              <button class="round-btn" id="cameraBtn" type="button" aria-label="Ligar ou desligar câmera" title="Câmera">📷</button>
+              <button class="round-btn" id="micBtn" type="button" aria-label="Ligar ou desligar microfone" title="Microfone">🎙️</button>
+              <button class="call-btn" id="startCallBtn" type="button">Iniciar atendimento selecionado</button>
+              <button class="call-btn cancel-action" id="cancelScheduledBtn" type="button" hidden>Cancelar consulta</button>
+              <button class="call-btn cancel-action" id="markRefundedBtn" type="button" hidden>Registrar devolução</button>
+              <button class="call-btn danger" id="endCallBtn" type="button" hidden>Encerrar chamada</button>
+              <button class="round-btn" id="screenBtn" type="button" aria-label="Compartilhar tela" title="Compartilhar tela">▣</button>
+              <button class="round-btn" id="chatBtn" type="button" aria-label="Enviar mensagem" title="Mensagem">💬</button>
+            </div>
+          </section>
+
+          <aside class="card record-card">
+            <div class="card-head"><h3>Prontuário clínico</h3><span class="badge" id="rpvarBadge">RPVAR pendente</span></div>
+            <div class="record-body">
+              <div class="info-box">
+                <div class="datum"><span>Paciente</span><strong id="recordPatient">—</strong></div>
+                <div class="datum"><span>Idade</span><strong id="recordAge">—</strong></div>
+                <div class="datum"><span>Espécie</span><strong id="recordSpecies">—</strong></div>
+                <div class="datum"><span>Peso</span><strong id="recordWeight">—</strong></div>
+                <div class="datum"><span>Sexo</span><strong id="recordSex">—</strong></div>
+                <div class="datum"><span>Raça</span><strong id="recordBreed">—</strong></div>
+              </div>
+              <label class="clinical-section">Queixa principal
+                <textarea id="complaint" data-record placeholder="Motivo informado pelo tutor..."></textarea>
+              </label>
+              <label class="clinical-section">Anamnese
+                <textarea id="anamnesis" data-record placeholder="Histórico, início dos sinais, alimentação, medicações e evolução..."></textarea>
+              </label>
+              <label class="clinical-section">Exame visual e achados clínicos
+                <textarea id="clinicalFindings" data-record placeholder="Comportamento, mucosas visíveis, respiração, lesões e demais observações possíveis por vídeo..."></textarea>
+              </label>
+              <label class="clinical-section">Hipótese diagnóstica / diagnóstico
+                <textarea id="diagnosis" data-record placeholder="Registre a avaliação clínica..."></textarea>
+              </label>
+              <label class="clinical-section">Conduta e orientações
+                <textarea id="treatmentPlan" data-record placeholder="Cuidados, acompanhamento e plano terapêutico..."></textarea>
+              </label>
+              <div class="clinical-section">
+                <div class="clinical-section-title">Receita <span>Receituário simples</span></div>
+                <textarea id="prescription" data-record aria-label="Receita" placeholder="Use o montador para incluir medicamento, dose, via, frequência e duração..."></textarea>
+                <div class="document-actions">
+                  <button class="soft-btn" id="openPrescriptionBuilder" type="button">Montar receita</button>
+                  <button class="soft-btn primary-document" id="downloadPrescription" type="button">Baixar receita em PDF</button>
+                  <button class="soft-btn full" id="openSignedPrescription" type="button">Assinar e enviar ao tutor</button>
+                </div>
+              </div>
+              <label class="clinical-section">Solicitação de exames
+                <textarea id="examRequests" data-record placeholder="Exames solicitados e justificativa..."></textarea>
+              </label>
+              <label class="clinical-section">Encaminhamento presencial
+                <textarea id="referral" data-record placeholder="Motivo, prioridade e unidade indicada..."></textarea>
+              </label>
+              <label class="clinical-section">Observações internas
+                <textarea id="notes" data-record placeholder="Informações complementares do atendimento..."></textarea>
+              </label>
+              <div class="record-actions">
+                <button class="soft-btn" type="button" data-action="exame">Ir para exames</button>
+                <button class="soft-btn" type="button" data-action="presencial">Encaminhar para presencial</button>
+                <button class="soft-btn full" id="downloadRecord" type="button">Baixar prontuário em PDF</button>
+              </div>
+              <div class="legal-note" id="legalNote">Confirme a relação presencial anterior antes de realizar diagnóstico ou prescrição por teleconsulta.</div>
+              <div class="save-bar">
+                <span class="save-state" id="saveState">Nenhum atendimento aberto</span>
+                <button class="save-record" id="saveRecordBtn" type="button" disabled>Salvar prontuário</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="clientView">
+        <div class="client-shell">
+          <div class="card client-layout">
+            <div class="client-preview">
+              <div class="camera-empty" id="cameraEmpty">
+                <div class="camera-icon">📷</div>
+                <strong>Sua câmera aparecerá aqui</strong>
+                <span>Faça o teste antes de entrar na sala.</span>
+              </div>
+              <video id="clientVideo" autoplay playsinline muted hidden></video>
+              <video id="clientRemoteVideo" class="client-remote" autoplay playsinline></video>
+            </div>
+            <div class="client-side">
+              <div class="mini-brand">ONDA ANIMAL</div>
+              <h1 id="clientHeading">Sua consulta está quase pronta</h1>
+              <p id="clientIntro">Confira os dados e permita o uso da câmera para entrar.</p>
+              <div class="appointment">
+                <div class="appointment-row"><span>Paciente</span><strong id="clientPatient">Thor</strong></div>
+                <div class="appointment-row"><span>Veterinária</span><strong id="clientProfessional">Dra. Bruna</strong></div>
+                <div class="appointment-row"><span>Horário</span><strong id="clientSchedule">—</strong></div>
+                <div class="appointment-row"><span>Unidade</span><strong id="clientUnit">—</strong></div>
+              </div>
+              <div class="check-row"><span class="check">✓</span><span>Internet pronta para a chamada</span></div>
+              <div class="check-row"><span class="check" id="cameraCheck">•</span><span id="cameraCheckText">Câmera e microfone ainda não testados</span></div>
+              <div class="check-row"><span class="check">✓</span><span>Termo de atendimento aceito</span></div>
+              <div class="client-actions">
+                <button class="secondary-wide" id="testDeviceBtn" type="button">Testar câmera e microfone</button>
+                <button class="primary-wide" id="enterRoomBtn" type="button">Permitir câmera e entrar</button>
+              </div>
+              <div class="client-mascot-caption"><strong>Pri &amp; Negão</strong>Para sempre na Onda Animal</div>
+              <img class="client-pets" src="__PET_CORNER_DATA_URL__" alt="Pri e Negão, mascotes da Onda Animal" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+    <form class="modal booking-quick-modal" id="bookingForm">
+      <div class="modal-icon">🐾</div>
+      <h2 id="bookingTitle">Agendar consulta por vídeo</h2>
+      <p id="bookingSlotSummary">Confira o horário escolhido.</p>
+      <div class="booking-quick-note"><span>✓</span> Preencha os dados abaixo para garantir o atendimento.</div>
+      <input id="bookingSlotId" type="hidden" />
+      <div class="form-grid">
+        <label>Seu nome<input id="bookingTutor" required autocomplete="name" placeholder="Nome do responsável" /></label>
+        <label>Seu WhatsApp<input id="bookingPhone" required autocomplete="tel" inputmode="tel" placeholder="(51) 99999-9999" /></label>
+        <label>E-mail<input id="bookingEmail" required type="email" autocomplete="email" placeholder="voce@exemplo.com" /></label>
+        <label>CPF<input id="bookingDocument" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" /></label>
+        <label>Nome do animal<input id="bookingPatient" required autocomplete="off" placeholder="Como ele se chama?" /></label>
+        <label>Espécie<select id="bookingSpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
+        <label>CEP<input id="bookingPostalCode" required autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" /></label>
+        <label>Endereço completo<input id="bookingAddress" required autocomplete="street-address" placeholder="Rua, número, bairro e cidade" /></label>
+        <label class="full">Motivo da consulta<textarea id="bookingComplaint" required placeholder="Conte em poucas palavras o que está acontecendo"></textarea></label>
+        <details class="booking-optional">
+          <summary>Adicionar mais informações (opcional)</summary>
+          <div class="booking-optional-fields">
+            <label>Sexo<select id="bookingSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
+            <label>Raça<input id="bookingBreed" placeholder="Ex.: SRD" /></label>
+            <label>Pelagem<input id="bookingCoat" /></label>
+            <label>Idade<input id="bookingAge" placeholder="Ex.: 4 anos" /></label>
+            <label>Peso<input id="bookingWeight" placeholder="Ex.: 18,4 kg" /></label>
+            <label class="check-input full"><input id="bookingRpvar" type="checkbox" /> Já realizou atendimento presencial na Onda Animal (RPVAR)</label>
+          </div>
+        </details>
+        <label class="check-input full booking-privacy"><input id="bookingConsent" type="checkbox" required /> Concordo com o uso destes dados para realizar a consulta.</label>
+      </div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="cancelBooking" type="button">Voltar</button>
+        <button class="primary-wide" id="confirmBooking" type="submit">Agendar consulta</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentTitle">
+    <div class="modal payment-box">
+      <div class="modal-icon" style="margin:auto">PIX</div>
+      <h2 id="paymentTitle">Pagamento da consulta</h2>
+      <p id="paymentIntro">Pague pelo QR Code Pix do Banrisul. A confirmação será identificada automaticamente.</p>
+      <div class="payment-price" id="paymentPrice">—</div>
+      <img id="pixQrImage" alt="QR Code Pix da consulta" hidden />
+      <div class="payment-status" id="paymentStatus">Aguardando pagamento...</div>
+      <div class="payment-test-note" id="paymentTestNote">MODO DE TESTE • Nenhum valor será cobrado.</div>
+      <div class="payment-next-steps" id="paymentNextSteps" hidden><strong>Agendamento confirmado ✓</strong><span>Você pode fechar esta página. Quando a veterinária iniciar o atendimento, a equipe enviará o acesso à videochamada pelo WhatsApp cadastrado.</span></div>
+      <div class="client-actions">
+        <button class="primary-wide" id="simulatePaymentBtn" type="button" hidden>Simular pagamento aprovado</button>
+        <button class="secondary-wide" id="copyPixBtn" type="button">Copiar Pix Copia e Cola</button>
+        <a class="secondary-wide" id="openInvoiceBtn" href="#" target="_blank" rel="noopener" style="display:grid;place-items:center;text-decoration:none">Abrir cobrança Pix</a>
+        <button class="primary-wide" id="closePaidPage" type="button" hidden>Fechar e aguardar o WhatsApp</button>
+        <button class="secondary-wide" id="requestCancellationBtn" type="button">Solicitar cancelamento</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cancelScheduledModal" role="dialog" aria-modal="true" aria-labelledby="cancelScheduledTitle">
+    <form class="modal" id="cancelScheduledForm">
+      <div class="modal-icon">!</div>
+      <h2 id="cancelScheduledTitle">Cancelar consulta</h2>
+      <p id="cancelScheduledSummary">O cadastro e o histórico serão preservados.</p>
+      <div class="form-grid">
+        <label class="full">Motivo do cancelamento<textarea id="cancelScheduledReason" required placeholder="Informe o motivo para ficar registrado"></textarea></label>
+        <label class="check-input full"><input id="cancelScheduledReopen" type="checkbox" checked /> Liberar este horário novamente no site</label>
+      </div>
+      <div class="payment-status" id="cancelScheduledPaymentNote">Se o Pix já estiver pago, o sistema criará uma pendência de devolução.</div>
+      <div class="modal-actions">
+        <button class="secondary-wide" id="closeCancelScheduled" type="button">Voltar</button>
+        <button class="primary-wide" id="confirmCancelScheduled" type="submit">Confirmar cancelamento</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="cancelRequestModal" role="dialog" aria-modal="true" aria-labelledby="cancelRequestTitle">
+    <form class="modal" id="cancelRequestForm">
+      <div class="modal-icon">🐾</div>
+      <h2 id="cancelRequestTitle">Solicitar cancelamento</h2>
+      <p>A equipe confirmará o cancelamento e, se houver pagamento, orientará a devolução.</p>
+      <label>Motivo<textarea id="cancelRequestReason" required placeholder="Conte por que precisa cancelar"></textarea></label>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="closeCancelRequest" type="button">Voltar</button>
+        <button class="primary-wide" id="confirmCancelRequest" type="submit">Enviar solicitação</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="availabilityModal" role="dialog" aria-modal="true" aria-labelledby="availabilityTitle">
+    <form class="modal" id="availabilityForm">
+      <div class="modal-icon">🗓</div>
+      <h2 id="availabilityTitle">Adicionar horário</h2>
+      <p>Este horário ficará disponível imediatamente na página de agendamento.</p>
+      <div class="form-grid">
+        <label class="full">Data e hora<input id="slotStartsAt" type="datetime-local" required /></label>
+        <label>Duração<select id="slotDuration"><option value="30">30 minutos</option><option value="45">45 minutos</option><option value="60">60 minutos</option></select></label>
+        <label>Valor da consulta<input id="slotPrice" type="number" min="1" step="0.01" required placeholder="Ex.: 120,00" /></label>
+        <label>Veterinária<input id="slotProfessional" required value="Dra. Bruna" /></label>
+        <label>CRMV<input id="slotCrmv" required /></label>
+        <label class="full">Unidade<select id="slotUnit"><option>Gravataí</option><option>Cachoeirinha</option></select></label>
+      </div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="cancelAvailability" type="button">Cancelar</button>
+        <button class="primary-wide" type="submit">Publicar horário</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="scheduleBlockModal" role="dialog" aria-modal="true" aria-labelledby="scheduleBlockTitle">
+    <form class="modal" id="scheduleBlockForm">
+      <div class="modal-icon">▦</div>
+      <h2 id="scheduleBlockTitle">Fechar horário</h2>
+      <p id="scheduleBlockSummary">Informe o motivo. Consultas já marcadas serão preservadas.</p>
+      <input id="scheduleBlockMode" type="hidden" />
+      <input id="scheduleBlockSlotId" type="hidden" />
+      <input id="scheduleBlockDate" type="hidden" />
+      <div class="form-grid">
+        <label id="scheduleBlockStartWrap">Início<input id="scheduleBlockStart" type="time" /></label>
+        <label id="scheduleBlockEndWrap">Fim<input id="scheduleBlockEnd" type="time" /></label>
+        <label class="full">Motivo<input id="scheduleBlockReason" required list="scheduleBlockReasons" placeholder="Ex.: cirurgia, reunião ou ausência" /></label>
+        <datalist id="scheduleBlockReasons"><option value="Cirurgia"><option value="Reunião"><option value="Ausência da veterinária"><option value="Feriado"><option value="Manutenção"><option value="Outro"></datalist>
+      </div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="cancelScheduleBlock" type="button">Cancelar</button>
+        <button class="primary-wide" id="confirmScheduleBlock" type="submit">Confirmar fechamento</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="internalBookingModal" role="dialog" aria-modal="true" aria-labelledby="internalBookingTitle">
+    <form class="modal wide" id="internalBookingForm">
+      <div class="modal-icon">▦</div>
+      <h2 id="internalBookingTitle">Agendar horário</h2>
+      <p id="internalBookingSummary">Selecione o tutor e o animal para reservar este horário.</p>
+      <input id="internalBookingSlotId" type="hidden" />
+      <div class="form-grid">
+        <label>Tutor<select id="internalBookingClient" required></select></label>
+        <label>Animal<select id="internalBookingPet" required></select></label>
+        <div class="full" style="display:flex;gap:10px;flex-wrap:wrap"><button class="secondary-wide" id="quickNewClient" type="button" style="min-height:42px;padding:0 15px">＋ Novo tutor</button><button class="secondary-wide" id="quickNewPet" type="button" style="min-height:42px;padding:0 15px">＋ Novo animal</button></div>
+        <label>Solicitação recebida por<select id="internalBookingSource"><option value="reception">Atendimento na clínica</option><option value="whatsapp">WhatsApp</option></select></label>
+        <label>Tipo de atendimento<select id="internalBookingService"><option>Consulta por vídeo</option><option>Retorno por vídeo</option><option>Teleorientação</option></select></label>
+        <label class="full">Motivo da consulta<textarea id="internalBookingComplaint" placeholder="Descreva o motivo informado pelo tutor"></textarea></label>
+        <label class="check-input full"><input id="internalBookingRpvar" type="checkbox" /> Possui atendimento presencial anterior registrado (RPVAR)</label>
+      </div>
+      <div class="payment-status" id="internalBookingHelp">O horário será removido imediatamente do site público após a confirmação.</div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="cancelInternalBooking" type="button">Cancelar</button>
+        <button class="primary-wide" id="confirmInternalBooking" type="submit">Confirmar agendamento</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="signedPrescriptionModal" role="dialog" aria-modal="true" aria-labelledby="signedPrescriptionTitle">
+    <div class="modal wide">
+      <div class="modal-icon">✓</div>
+      <h2 id="signedPrescriptionTitle">Assinar e enviar receita</h2>
+      <p>A assinatura desenhada na tela não substitui certificado digital. Use o certificado da veterinária ou assine pelo SimplesVet e envie o PDF final por aqui.</p>
+      <div class="workflow-steps">
+        <div class="workflow-step"><b>1</b><div><strong>Baixe a receita</strong><span>O PDF sai com dados do tutor, animal, medicamentos e CRMV.</span></div></div>
+        <div class="workflow-step"><b>2</b><div><strong>Assine com certificado digital</strong><span>Faça a assinatura certificada no serviço escolhido ou no fluxo do SimplesVet.</span></div></div>
+        <div class="workflow-step"><b>3</b><div><strong>Envie o PDF assinado</strong><span>O sistema cria um link seguro e envia ao WhatsApp do tutor quando a integração estiver ativa.</span></div></div>
+      </div>
+      <button class="secondary-wide" id="downloadForSignature" type="button" style="width:100%;margin-bottom:14px">Baixar receita para assinar</button>
+      <label>Receita assinada em PDF<input id="signedPrescriptionFile" type="file" accept="application/pdf,.pdf" /></label>
+      <div class="payment-status" id="signedPrescriptionStatus">Nenhum arquivo enviado.</div>
+      <div class="modal-actions">
+        <button class="secondary-wide" id="closeSignedPrescription" type="button">Fechar</button>
+        <button class="primary-wide" id="uploadSignedPrescription" type="button">Enviar receita assinada</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="appointmentModal" role="dialog" aria-modal="true" aria-labelledby="appointmentTitle">
+    <form class="modal" id="appointmentForm">
+      <div class="modal-icon">🐾</div>
+      <h2 id="appointmentTitle">Novo atendimento por vídeo</h2>
+      <p>Preencha os dados usados no link e no prontuário.</p>
+      <div class="form-grid">
+        <label>Paciente<input id="formPatient" required placeholder="Nome do animal" /></label>
+        <label>Tutor<input id="formTutor" required placeholder="Nome do responsável" /></label>
+        <label>Veterinário(a)<input id="formProfessional" required value="Dra. Bruna" /></label>
+        <label>CRMV<input id="formCrmv" placeholder="Ex.: CRMV-RS 12345" /></label>
+        <label>Unidade<select id="formUnit"><option>Gravataí</option><option>Cachoeirinha</option></select></label>
+        <label>Serviço<select id="formService"><option>Consulta por vídeo</option><option>Retorno por vídeo</option><option>Telemonitoramento</option><option>Teletriagem</option></select></label>
+        <label>Espécie<select id="formSpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
+        <label>Sexo<select id="formSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
+        <label>Raça<input id="formBreed" placeholder="Ex.: SRD" /></label>
+        <label>Pelagem<input id="formCoat" placeholder="Ex.: preta e branca" /></label>
+        <label>Idade<input id="formAge" placeholder="Ex.: 4 anos" /></label>
+        <label>Peso<input id="formWeight" inputmode="decimal" placeholder="Ex.: 18,4 kg" /></label>
+        <label>CPF do tutor<input id="formTutorDocument" inputmode="numeric" placeholder="Opcional na receita simples" /></label>
+        <label class="full">Endereço do tutor<input id="formTutorAddress" placeholder="Rua, número, bairro e cidade" /></label>
+        <label class="full">Queixa principal<textarea id="formComplaint" placeholder="O que o tutor relatou?"></textarea></label>
+        <label class="check-input full"><input id="formRpvar" type="checkbox" checked /> Possui atendimento presencial anterior registrado (RPVAR)</label>
+      </div>
+      <div class="modal-actions" style="margin-top:18px">
+        <button class="secondary-wide" id="cancelAppointment" type="button">Cancelar</button>
+        <button class="primary-wide" type="submit">Criar sala</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="prescriptionModal" role="dialog" aria-modal="true" aria-labelledby="prescriptionTitle">
+    <form class="modal wide" id="prescriptionForm">
+      <div class="modal-icon">Rx</div>
+      <h2 id="prescriptionTitle">Montar receita simples</h2>
+      <p>Preencha cada medicamento. Você pode adicionar vários itens à mesma receita.</p>
+
+      <div class="form-grid">
+        <label>Veterinário(a)<input id="rxProfessional" required /></label>
+        <label>CRMV<input id="rxCrmv" required placeholder="Ex.: CRMV-RS 12345" /></label>
+        <label>Paciente<input id="rxPatient" required /></label>
+        <label>Tutor<input id="rxTutor" required /></label>
+        <label>CPF do tutor<input id="rxTutorDocument" inputmode="numeric" placeholder="Opcional na receita simples" /></label>
+        <label>Endereço do tutor<input id="rxTutorAddress" placeholder="Rua, número, bairro e cidade" /></label>
+        <label>Espécie<input id="rxSpecies" placeholder="Ex.: Canino" /></label>
+        <label>Sexo<select id="rxSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
+        <label>Raça<input id="rxBreed" placeholder="Ex.: SRD" /></label>
+        <label>Pelagem<input id="rxCoat" placeholder="Ex.: preta e branca" /></label>
+        <label>Peso<input id="rxWeight" placeholder="Ex.: 18,4 kg" /></label>
+        <label>Idade<input id="rxAge" placeholder="Ex.: 4 anos" /></label>
+      </div>
+
+      <div class="modal-section">
+        <h3>Medicamento</h3>
+        <div class="form-grid">
+          <label>Nome do medicamento<input id="rxMedicine" placeholder="Nome comercial ou princípio ativo" /></label>
+          <label>Concentração e apresentação<input id="rxPresentation" placeholder="Ex.: 50 mg, comprimidos" /></label>
+          <label>Quantidade<input id="rxQuantity" placeholder="Ex.: 1 caixa com 10 comprimidos" /></label>
+          <label>Dose<input id="rxDose" placeholder="Ex.: 1 comprimido" /></label>
+          <label>Via<select id="rxRoute"><option>Via oral</option><option>Uso tópico</option><option>Via otológica</option><option>Via oftálmica</option><option>Via subcutânea</option><option>Outra via</option></select></label>
+          <label>Frequência<input id="rxFrequency" placeholder="Ex.: a cada 12 horas" /></label>
+          <label>Duração<input id="rxDuration" placeholder="Ex.: por 7 dias" /></label>
+          <label>Orientações<input id="rxInstructions" placeholder="Ex.: administrar após alimentação" /></label>
+        </div>
+        <div class="medicine-preview" id="medicinePreview">Preencha os campos para visualizar o medicamento formatado.</div>
+        <button class="secondary-wide" id="addMedicine" type="button" style="margin-top:10px;width:100%">Adicionar medicamento à receita</button>
+      </div>
+
+      <div class="prescription-note">Este recurso gera receita simples. Medicamentos sujeitos a controle especial devem ser emitidos e assinados pelos fluxos oficiais do SimplesVet/SIPEAGRO.</div>
+      <div class="modal-actions">
+        <button class="secondary-wide" id="closePrescription" type="button">Fechar</button>
+        <button class="primary-wide" type="submit">Salvar receita</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop login-modal-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="login-shell">
+      <section class="login-brand-panel">
+        <div><div class="brand-mark">OA</div><h2>Seu dia clínico organizado em um só lugar.</h2><p>Agenda, tutores, animais, teleconsulta e prontuário integrados para a rotina da Onda Animal.</p><div class="login-mascots"><img src="__PET_CORNER_DATA_URL__" alt="Pri e Negão" /><div><strong>Pri &amp; Negão</strong><span>Nossos mascotes, para sempre.</span></div></div></div>
+        <div class="login-security">Acesso exclusivo para profissionais autorizados</div>
+      </section>
+      <form class="login-form-panel" id="loginForm">
+        <h1 id="loginTitle">Bem-vinda</h1>
+        <p>Entre para acessar sua agenda veterinária.</p>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          <label>E-mail profissional<input id="loginEmail" type="email" autocomplete="username" value="veterinaria@onda-animal.com.br" required /></label>
+          <label>Senha<input id="pinInput" type="password" autocomplete="current-password" placeholder="Digite sua senha" required /></label>
+        </div>
+        <div class="error-text" id="loginError"></div>
+        <button class="primary-wide" id="loginBtn" type="submit">Entrar no sistema</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="clientRegistryModal" role="dialog" aria-modal="true" aria-labelledby="clientRegistryTitle">
+    <form class="modal wide" id="clientRegistryForm">
+      <div class="modal-icon">♙</div>
+      <h2 id="clientRegistryTitle">Novo tutor</h2>
+      <p>Cadastre os dados de contato e identificação do responsável.</p>
+      <div class="form-grid">
+        <label>Nome completo<input id="registryClientName" required autocomplete="name" /></label>
+        <label>WhatsApp<input id="registryClientPhone" required inputmode="tel" /></label>
+        <label>E-mail<input id="registryClientEmail" type="email" autocomplete="email" /></label>
+        <label>CPF<input id="registryClientCpf" inputmode="numeric" /></label>
+        <label class="full">Endereço<input id="registryClientAddress" autocomplete="street-address" /></label>
+      </div>
+      <div class="modal-actions" style="margin-top:18px"><button class="secondary-wide" id="cancelClientRegistry" type="button">Cancelar</button><button class="primary-wide" type="submit">Salvar tutor</button></div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="petRegistryModal" role="dialog" aria-modal="true" aria-labelledby="petRegistryTitle">
+    <form class="modal wide" id="petRegistryForm">
+      <div class="modal-icon">🐾</div>
+      <h2 id="petRegistryTitle">Novo animal</h2>
+      <p>Vincule o animal a um tutor já cadastrado.</p>
+      <div class="form-grid">
+        <label class="full">Tutor<select id="petRegistryClient" required></select></label>
+        <label>Nome do animal<input id="petRegistryName" required /></label>
+        <label>Espécie<select id="petRegistrySpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
+        <label>Sexo<select id="petRegistrySex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
+        <label>Raça<input id="petRegistryBreed" /></label>
+        <label>Pelagem<input id="petRegistryCoat" /></label>
+        <label>Idade<input id="petRegistryAge" placeholder="Ex.: 4 anos" /></label>
+        <label>Peso<input id="petRegistryWeight" placeholder="Ex.: 18,4 kg" /></label>
+      </div>
+      <div class="modal-actions" style="margin-top:18px"><button class="secondary-wide" id="cancelPetRegistry" type="button">Cancelar</button><button class="primary-wide" type="submit">Salvar animal</button></div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="clientDetailsModal" role="dialog" aria-modal="true" aria-labelledby="clientDetailsTitle">
+    <div class="modal wide">
+      <div class="modal-icon">♙</div><h2 id="clientDetailsTitle">Tutor</h2><p id="clientDetailsContact"></p>
+      <div class="modal-section"><h3>Animais vinculados</h3><div id="clientPetsList" class="next-list"></div></div>
+      <div class="modal-section"><h3>Histórico clínico por categoria</h3><div id="clientClinicalHistory" class="clinical-history"><div class="portal-empty">Carregando prontuários...</div></div></div>
+      <div class="modal-actions"><button class="secondary-wide" id="closeClientDetails" type="button">Fechar</button><button class="primary-wide" id="addPetForClient" type="button">＋ Adicionar animal</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop reminder-modal" id="appointmentReminderModal" role="dialog" aria-modal="true" aria-labelledby="appointmentReminderTitle">
+    <div class="modal">
+      <div class="modal-icon">◷</div><h2 id="appointmentReminderTitle">Próxima consulta em breve</h2>
+      <div class="reminder-clock" id="reminderCountdown">10 min</div>
+      <div class="reminder-card"><strong id="reminderPatient">Paciente</strong><span id="reminderTutor">Tutor</span><span id="reminderSchedule">Horário</span></div>
+      <div class="modal-actions"><button class="secondary-wide" id="dismissReminder" type="button">Lembrar depois</button><button class="primary-wide" id="startReminderAppointment" type="button">Abrir atendimento</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="finishModal" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
+    <div class="modal">
+      <div class="modal-icon">✓</div>
+      <h2 id="finishTitle">Encerrar chamada?</h2>
+      <p>A videochamada será encerrada e todo o prontuário será salvo como atendimento finalizado.</p>
+      <div class="modal-actions">
+        <button class="secondary-wide" id="cancelFinish" type="button">Continuar consulta</button>
+        <button class="primary-wide" id="confirmFinish" type="button">Salvar e encerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" id="legacy-demo-code">
+    const roleButtons = document.querySelectorAll('[data-view]');
+    const professionalView = document.getElementById('professionalView');
+    const clientView = document.getElementById('clientView');
+    const cameraBtn = document.getElementById('cameraBtn');
+    const micBtn = document.getElementById('micBtn');
+    const startCallBtn = document.getElementById('startCallBtn');
+    const localVideo = document.getElementById('localVideo');
+    const localWrap = document.getElementById('localWrap');
+    const clientVideo = document.getElementById('clientVideo');
+    const cameraEmpty = document.getElementById('cameraEmpty');
+    const toast = document.getElementById('toast');
+    const timer = document.getElementById('timer');
+    const finishModal = document.getElementById('finishModal');
+    let proStream = null;
+    let clientStream = null;
+    let callStarted = false;
+    let elapsed = 0;
+    let clock = null;
+    let toastTimeout = null;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    roleButtons.forEach((button) => button.addEventListener('click', () => {
+      roleButtons.forEach((item) => item.classList.toggle('active', item === button));
+      const professional = button.dataset.view === 'professional';
+      professionalView.classList.toggle('active', professional);
+      clientView.classList.toggle('active', !professional);
+    }));
+
+    async function getMedia(target) {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        showToast('Este navegador não liberou acesso à câmera.');
+        return null;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        target.srcObject = stream;
+        return stream;
+      } catch (error) {
+        showToast('Permita o uso da câmera e do microfone para continuar.');
+        return null;
+      }
+    }
+
+    cameraBtn.addEventListener('click', async () => {
+      if (!proStream) {
+        proStream = await getMedia(localVideo);
+        if (proStream) {
+          localWrap.classList.add('active');
+          showToast('Câmera e microfone ativados.');
+        }
+        return;
+      }
+      const track = proStream.getVideoTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        cameraBtn.classList.toggle('off', !track.enabled);
+        cameraBtn.textContent = track.enabled ? '📷' : '🚫';
+      }
+    });
+
+    micBtn.addEventListener('click', async () => {
+      if (!proStream) {
+        proStream = await getMedia(localVideo);
+        if (proStream) localWrap.classList.add('active');
+        return;
+      }
+      const track = proStream.getAudioTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        micBtn.classList.toggle('off', !track.enabled);
+        micBtn.textContent = track.enabled ? '🎙️' : '🔇';
+      }
+    });
+
+    function startTimer() {
+      clock = setInterval(() => {
+        elapsed += 1;
+        const min = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const sec = String(elapsed % 60).padStart(2, '0');
+        timer.textContent = `${min}:${sec}`;
+      }, 1000);
+    }
+
+    startCallBtn.addEventListener('click', async () => {
+      if (!callStarted) {
+        if (!proStream) {
+          proStream = await getMedia(localVideo);
+          if (proStream) localWrap.classList.add('active');
+        }
+        callStarted = true;
+        document.getElementById('proStatus').textContent = 'Consulta em andamento';
+        document.getElementById('remoteTitle').textContent = 'Juliana e Thor conectados';
+        document.getElementById('remoteText').textContent = 'Demonstração da chamada em andamento.';
+        document.getElementById('voicePulse').classList.add('active');
+        startCallBtn.textContent = 'Encerrar consulta';
+        startCallBtn.classList.add('danger');
+        startTimer();
+        showToast('Consulta iniciada.');
+      } else {
+        finishModal.classList.add('open');
+      }
+    });
+
+    document.getElementById('cancelFinish').addEventListener('click', () => finishModal.classList.remove('open'));
+    document.getElementById('confirmFinish').addEventListener('click', () => {
+      clearInterval(clock);
+      callStarted = false;
+      finishModal.classList.remove('open');
+      startCallBtn.textContent = 'Consulta finalizada';
+      startCallBtn.classList.remove('danger');
+      startCallBtn.disabled = true;
+      document.getElementById('proStatus').textContent = 'Prontuário salvo';
+      document.getElementById('remoteTitle').textContent = 'Atendimento concluído';
+      document.getElementById('remoteText').textContent = 'O resumo e os documentos estão prontos para envio ao cliente.';
+      document.getElementById('voicePulse').classList.remove('active');
+      showToast('Prontuário salvo com sucesso.');
+    });
+
+    document.getElementById('testDeviceBtn').addEventListener('click', async () => {
+      if (!clientStream) clientStream = await getMedia(clientVideo);
+      if (clientStream) {
+        clientVideo.hidden = false;
+        cameraEmpty.hidden = true;
+        document.getElementById('cameraCheck').textContent = '✓';
+        document.getElementById('cameraCheckText').textContent = 'Câmera e microfone funcionando';
+        showToast('Tudo certo com seu aparelho.');
+      }
+    });
+
+    document.getElementById('enterRoomBtn').addEventListener('click', () => {
+      showToast('Você entrou na sala. A Dra. Bruna já foi avisada.');
+      document.getElementById('enterRoomBtn').textContent = 'Aguardando a veterinária...';
+      document.getElementById('enterRoomBtn').disabled = true;
+    });
+
+    document.getElementById('screenBtn').addEventListener('click', async () => {
+      if (!navigator.mediaDevices?.getDisplayMedia) return showToast('Compartilhamento de tela indisponível neste aparelho.');
+      try {
+        const display = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        showToast('Compartilhamento de tela iniciado.');
+        display.getVideoTracks()[0]?.addEventListener('ended', () => showToast('Compartilhamento encerrado.'));
+      } catch (_) { showToast('Compartilhamento cancelado.'); }
+    });
+
+    document.getElementById('chatBtn').addEventListener('click', () => showToast('Mensagem rápida enviada: “Consegue me ouvir bem?”'));
+    document.querySelectorAll('[data-action]').forEach((button) => button.addEventListener('click', () => {
+      const labels = { receita: 'Receita adicionada ao atendimento.', exame: 'Solicitação de exame adicionada.', presencial: 'Encaminhamento presencial registrado.' };
+      showToast(labels[button.dataset.action]);
+    }));
+  </script>
+  <script src="/app.js" defer></script>
+</body>
+</html>

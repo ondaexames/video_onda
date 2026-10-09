@@ -1,0 +1,83 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1788360000000,
+      "tag": "0000_video_signaling",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788367200000,
+      "tag": "0001_consultation_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788429600000,
+      "tag": "0002_professional_prescriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790006400000,
+      "tag": "0003_scheduling_payments_documents",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790015400000,
+      "tag": "0004_internal_booking_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790712000000,
+      "tag": "0005_schedule_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791468000000,
+      "tag": "0006_schedule_calendar_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791471000000,
+      "tag": "0007_banrisul_pix_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791472500000,
+      "tag": "0008_patient_clinical_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791480000000,
+      "tag": "0009_appointment_cancellation",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791481200000,
+      "tag": "0010_reusable_cancelled_slots",
+      "breakpoints": true
+    }
+  ]
+}

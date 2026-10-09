@@ -1,0 +1,8 @@
+node_modules/
+.local-data/
+.env
+.env.local
+.dev.vars
+.vercel/
+npm-debug.log*
+
