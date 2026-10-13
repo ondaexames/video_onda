@@ -85,6 +85,7 @@
   let scheduleAudit = [];
   let portalClients = [];
   let selectedClientId = null;
+  let lastRegistryCep = "";
   let reminderTimer = null;
   let remindedAppointmentId = null;
   let publicSlots = [];
@@ -652,7 +653,56 @@
   }
 
   function openClientForm() {
-    $("clientRegistryForm").reset(); $("clientRegistryModal").classList.add("open"); $("registryClientName").focus();
+    $("clientRegistryForm").reset();
+    lastRegistryCep = "";
+    $("registryCepStatus").textContent = "Digite o CEP para preencher o endereço.";
+    $("registryCepStatus").className = "field-help";
+    $("clientRegistryModal").classList.add("open");
+    $("registryClientName").focus();
+  }
+
+  async function lookupRegistryCep() {
+    const input = $("registryClientPostalCode");
+    const button = $("lookupRegistryCep");
+    const status = $("registryCepStatus");
+    const cep = input.value.replace(/\D/g, "");
+    if (cep.length !== 8) {
+      status.textContent = "Digite um CEP válido com 8 números.";
+      status.className = "field-help error";
+      return;
+    }
+    if (cep === lastRegistryCep && $("registryClientAddress").value.trim()) return;
+    button.disabled = true;
+    button.textContent = "Buscando…";
+    status.textContent = "Consultando endereço…";
+    status.className = "field-help";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal });
+      if (!response.ok) throw new Error("Falha ao consultar CEP");
+      const data = await response.json();
+      if (data.erro) throw new Error("CEP não encontrado");
+      if ($("registryClientPostalCode").value.replace(/\D/g, "") !== cep) return;
+      const cityState = [data.localidade, data.uf].filter(Boolean).join("/");
+      $("registryClientAddress").value = [data.logradouro, data.bairro, cityState].filter(Boolean).join(" - ");
+      lastRegistryCep = cep;
+      status.textContent = "Endereço encontrado. Agora informe o número.";
+      status.className = "field-help success";
+      $("registryClientAddressNumber").focus();
+    } catch (error) {
+      if ($("registryClientPostalCode").value.replace(/\D/g, "") !== cep) return;
+      lastRegistryCep = "";
+      status.textContent = error.name === "AbortError"
+        ? "A consulta demorou. Preencha o endereço manualmente."
+        : "CEP não encontrado. Confira ou preencha o endereço manualmente.";
+      status.className = "field-help error";
+      $("registryClientAddress").focus();
+    } finally {
+      clearTimeout(timeout);
+      button.disabled = false;
+      button.textContent = "Buscar";
+    }
   }
 
   function openPetForm(clientId = "") {
@@ -2437,7 +2487,12 @@
   $("clientRegistryForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
-      const data = await api("/api/clients", { method: "POST", headers: staffHeaders(), body: JSON.stringify({ name: $("registryClientName").value, phone: $("registryClientPhone").value, email: $("registryClientEmail").value, cpf: $("registryClientCpf").value, address: $("registryClientAddress").value }) });
+      const address = [
+        $("registryClientAddress").value.trim(),
+        `nº ${$("registryClientAddressNumber").value.trim()}`,
+        $("registryClientAddressComplement").value.trim(),
+      ].filter(Boolean).join(" - ");
+      const data = await api("/api/clients", { method: "POST", headers: staffHeaders(), body: JSON.stringify({ name: $("registryClientName").value, phone: $("registryClientPhone").value, email: $("registryClientEmail").value, cpf: $("registryClientCpf").value, postalCode: $("registryClientPostalCode").value, address }) });
       $("clientRegistryModal").classList.remove("open");
       await loadClients();
       showToast("Tutor cadastrado com sucesso.");
@@ -2464,6 +2519,22 @@
     const digits = event.target.value.replace(/\D/g, "").slice(0, 11);
     event.target.value = digits.length > 10 ? digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3") : digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
   });
+  $("registryClientCpf").addEventListener("input", (event) => {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 11);
+    event.target.value = digits.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4").replace(/-$/, "");
+  });
+  $("registryClientPostalCode").addEventListener("input", (event) => {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
+    event.target.value = digits.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
+    if (digits !== lastRegistryCep) {
+      $("registryCepStatus").textContent = digits.length === 8 ? "CEP pronto para consulta." : "Digite o CEP para preencher o endereço.";
+      $("registryCepStatus").className = "field-help";
+    }
+  });
+  $("registryClientPostalCode").addEventListener("blur", () => {
+    if ($("registryClientPostalCode").value.replace(/\D/g, "").length === 8) lookupRegistryCep();
+  });
+  $("lookupRegistryCep").addEventListener("click", lookupRegistryCep);
   $("backToDashboard").addEventListener("click", () => {
     if (room && !isEnding && !window.confirm("A chamada está aberta. Deseja voltar para a agenda sem encerrá-la?")) return;
     setPortalRoute("dashboard");

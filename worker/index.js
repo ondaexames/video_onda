@@ -474,13 +474,21 @@ async function handleStaffApi(request, env, url, db) {
     const body = await readJson(request) || {};
     const name = cleanName(body.name);
     const phone = onlyDigits(body.phone);
-    if (name.length < 2 || phone.length < 10) return responseJson({ error: "Informe o nome e um WhatsApp válido" }, 400);
+    const email = cleanName(body.email);
+    const cpf = onlyDigits(body.cpf);
+    const postalCode = onlyDigits(body.postalCode);
+    const address = cleanText(body.address, 260);
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (name.length < 2 || phone.length < 10 || !emailValid || cpf.length !== 11 || postalCode.length !== 8 || !address) {
+      return responseJson({ error: "Preencha nome, WhatsApp, e-mail válido, CPF, CEP e endereço completo" }, 400);
+    }
     const existing = await db.prepare("SELECT id FROM clients WHERE phone = ?").bind(phone).first();
     if (existing) return responseJson({ error: "Já existe um tutor com este WhatsApp", clientId: existing.id }, 409);
     const id = randomToken(12);
     const now = Math.floor(Date.now() / 1000);
+    const fullAddress = `${address} • CEP ${postalCode.replace(/(\d{5})(\d{3})/, "$1-$2")}`;
     await db.prepare("INSERT INTO clients (id, name, cpf, email, phone, address, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(id, name, onlyDigits(body.cpf), cleanName(body.email), phone, cleanText(body.address, 300), now, now).run();
+      .bind(id, name, cpf, email, phone, fullAddress, now, now).run();
     return responseJson({ ok: true, id }, 201);
   }
 

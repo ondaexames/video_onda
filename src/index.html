@@ -350,6 +350,20 @@
     select option { color: #102033; background: white; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-grid .full { grid-column: 1 / -1; }
+    .cep-lookup { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .cep-lookup button {
+      min-width: 92px;
+      border: 1px solid rgba(22, 145, 181, .28);
+      border-radius: 12px;
+      color: #0e7897;
+      background: #eaf8fc;
+      font-weight: 850;
+      cursor: pointer;
+    }
+    .cep-lookup button:disabled { opacity: .62; cursor: wait; }
+    .field-help { color: var(--muted); font-size: 11px; font-weight: 650; line-height: 1.35; }
+    .field-help.success { color: #19755d; }
+    .field-help.error { color: #b64848; }
     .new-appointment {
       min-height: 36px;
       padding: 0 11px;
@@ -1470,9 +1484,15 @@
       <div class="form-grid">
         <label>Nome completo<input id="registryClientName" required autocomplete="name" /></label>
         <label>WhatsApp<input id="registryClientPhone" required inputmode="tel" /></label>
-        <label>E-mail<input id="registryClientEmail" type="email" autocomplete="email" /></label>
-        <label>CPF<input id="registryClientCpf" inputmode="numeric" /></label>
-        <label class="full">Endereço<input id="registryClientAddress" autocomplete="street-address" /></label>
+        <label>E-mail<input id="registryClientEmail" required type="email" autocomplete="email" /></label>
+        <label>CPF<input id="registryClientCpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" /></label>
+        <label>CEP
+          <span class="cep-lookup"><input id="registryClientPostalCode" required autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" /><button id="lookupRegistryCep" type="button">Buscar</button></span>
+          <small class="field-help" id="registryCepStatus" aria-live="polite">Digite o CEP para preencher o endereço.</small>
+        </label>
+        <label>Número<input id="registryClientAddressNumber" required autocomplete="address-line2" placeholder="Ex.: 67" /></label>
+        <label class="full">Rua, bairro, cidade e estado<input id="registryClientAddress" required autocomplete="street-address" placeholder="Preenchido automaticamente pelo CEP" /></label>
+        <label class="full">Complemento (opcional)<input id="registryClientAddressComplement" autocomplete="address-line2" placeholder="Apartamento, bloco ou referência" /></label>
       </div>
       <div class="modal-actions" style="margin-top:18px"><button class="secondary-wide" id="cancelClientRegistry" type="button">Cancelar</button><button class="primary-wide" type="submit">Salvar tutor</button></div>
     </form>
