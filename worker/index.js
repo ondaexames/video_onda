@@ -273,11 +273,16 @@ async function handlePublicApi(request, env, url, db) {
     const tutorDocument = onlyDigits(body.tutorDocument);
     const patientName = cleanName(body.patientName);
     const species = cleanName(body.species);
+    const sex = cleanName(body.sex);
+    const breed = cleanName(body.breed);
+    const coat = cleanName(body.coat);
+    const age = cleanName(body.age);
+    const weight = cleanName(body.weight);
     const chiefComplaint = cleanText(body.chiefComplaint, 3000);
     const postalCode = onlyDigits(body.postalCode);
     const streetAddress = cleanText(body.tutorAddress, 260);
     const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!tutorName || phone.length < 10 || !emailValid || tutorDocument.length !== 11 || !patientName || !species || !body.slotId || !chiefComplaint || postalCode.length !== 8 || !streetAddress) return responseJson({ error: "Preencha nome, telefone, e-mail válido, CPF, paciente, espécie, CEP, endereço completo, motivo da consulta e horário" }, 400);
+    if (!tutorName || phone.length < 10 || !emailValid || tutorDocument.length !== 11 || !patientName || !species || !sex || !breed || !coat || !age || !weight || !body.slotId || !chiefComplaint || postalCode.length !== 8 || !streetAddress) return responseJson({ error: "Preencha todos os dados obrigatórios do tutor, do animal, do endereço e da consulta" }, 400);
     const fullAddress = `${streetAddress} • CEP ${postalCode.replace(/(\d{5})(\d{3})/, "$1-$2")}`;
     if (!banrisulReady(env) && !paymentTestMode(env)) return responseJson({ error: "O Pix Banrisul ainda está sendo configurado. Tente novamente em breve." }, 503);
     const slot = await db.prepare("SELECT * FROM availability_slots WHERE id = ? AND status = 'open'").bind(String(body.slotId)).first();
@@ -302,7 +307,7 @@ async function handlePublicApi(request, env, url, db) {
       }
       await db.batch([
         db.prepare("INSERT INTO pets (id, client_id, name, species, sex, breed, coat, age, weight, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-          .bind(petId, resolvedClientId, patientName, species, cleanName(body.sex), cleanName(body.breed), cleanName(body.coat), cleanName(body.age), cleanName(body.weight), now, now),
+          .bind(petId, resolvedClientId, patientName, species, sex, breed, coat, age, weight, now, now),
         db.prepare("INSERT INTO appointments (id, public_token, public_token_hash, client_id, pet_id, slot_id, chief_complaint, rpvar_valid, status, payment_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', 'pending', ?, ?)")
           .bind(appointmentId, publicToken, await sha256(publicToken), resolvedClientId, petId, slot.id, chiefComplaint, body.rpvarValid ? 1 : 0, now, now),
       ]);

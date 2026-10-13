@@ -567,11 +567,9 @@
     .booking-quick-modal { width: min(680px, 100%); }
     .booking-quick-note { display: flex; align-items: center; gap: 10px; margin: -5px 0 18px; padding: 11px 13px; border-radius: 12px; color: #245c52; background: #edf8f5; font-size: 13px; font-weight: 800; }
     .booking-quick-note span { width: 25px; height: 25px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--green); }
-    .booking-optional { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 14px; background: #fafcfc; overflow: hidden; }
-    .booking-optional summary { padding: 14px 16px; color: #344348; cursor: pointer; font-size: 14px; font-weight: 850; }
-    .booking-optional[open] summary { border-bottom: 1px solid var(--line); }
-    .booking-optional-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
-    .booking-optional-fields .full { grid-column: 1 / -1; }
+    .booking-pet-fields { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #fafcfc; }
+    .booking-pet-fields h3 { grid-column: 1 / -1; margin: 0; color: #344348; font-size: 15px; }
+    .booking-pet-fields .full { grid-column: 1 / -1; }
     .booking-privacy { margin-top: 2px; padding: 12px; border-radius: 12px; background: #f5f7f7; }
     .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .pin-input { text-align: center; letter-spacing: .35em; font-size: 24px; font-weight: 900; margin: 4px 0 14px; }
@@ -881,9 +879,8 @@
       .modal-actions { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .form-grid .full { grid-column: auto; }
-      .booking-optional { grid-column: auto; }
-      .booking-optional-fields { grid-template-columns: 1fr; }
-      .booking-optional-fields .full { grid-column: auto; }
+      .booking-pet-fields { grid-column: auto; grid-template-columns: 1fr; }
+      .booking-pet-fields h3, .booking-pet-fields .full { grid-column: auto; }
       .public-scheduler { grid-template-columns: 1fr; }
       .booking-vet-access { position: static; margin-bottom: 18px; }
       .schedule-panel h2 { margin-right: 0; }
@@ -1228,17 +1225,15 @@
         <label>CEP<input id="bookingPostalCode" required autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" /></label>
         <label>Endereço completo<input id="bookingAddress" required autocomplete="street-address" placeholder="Rua, número, bairro e cidade" /></label>
         <label class="full">Motivo da consulta<textarea id="bookingComplaint" required placeholder="Conte em poucas palavras o que está acontecendo"></textarea></label>
-        <details class="booking-optional">
-          <summary>Adicionar mais informações (opcional)</summary>
-          <div class="booking-optional-fields">
-            <label>Sexo<select id="bookingSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
-            <label>Raça<input id="bookingBreed" placeholder="Ex.: SRD" /></label>
-            <label>Pelagem<input id="bookingCoat" /></label>
-            <label>Idade<input id="bookingAge" placeholder="Ex.: 4 anos" /></label>
-            <label>Peso<input id="bookingWeight" placeholder="Ex.: 18,4 kg" /></label>
-            <label class="check-input full"><input id="bookingRpvar" type="checkbox" /> Já realizou atendimento presencial na Onda Animal (RPVAR)</label>
-          </div>
-        </details>
+        <div class="booking-pet-fields">
+          <h3>Dados obrigatórios do animal</h3>
+          <label>Sexo<select id="bookingSex" required><option value="" selected disabled>Selecione</option><option>Macho</option><option>Fêmea</option></select></label>
+          <label>Raça<input id="bookingBreed" required placeholder="Ex.: SRD" /></label>
+          <label>Cor do animal<input id="bookingCoat" required placeholder="Ex.: preta e branca" /></label>
+          <label>Idade<input id="bookingAge" required placeholder="Ex.: 4 anos" /></label>
+          <label>Peso<input id="bookingWeight" required placeholder="Ex.: 18,4 kg" /></label>
+          <label class="check-input full"><input id="bookingRpvar" type="checkbox" /> Já realizou atendimento presencial na Onda Animal (RPVAR)</label>
+        </div>
         <label class="check-input full booking-privacy"><input id="bookingConsent" type="checkbox" required /> Concordo com o uso destes dados para realizar a consulta.</label>
       </div>
       <div class="modal-actions" style="margin-top:18px">
@@ -1397,7 +1392,7 @@
         <label>Espécie<select id="formSpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
         <label>Sexo<select id="formSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
         <label>Raça<input id="formBreed" placeholder="Ex.: SRD" /></label>
-        <label>Pelagem<input id="formCoat" placeholder="Ex.: preta e branca" /></label>
+        <label>Cor do animal<input id="formCoat" placeholder="Ex.: preta e branca" /></label>
         <label>Idade<input id="formAge" placeholder="Ex.: 4 anos" /></label>
         <label>Peso<input id="formWeight" inputmode="decimal" placeholder="Ex.: 18,4 kg" /></label>
         <label>CPF do tutor<input id="formTutorDocument" inputmode="numeric" placeholder="Opcional na receita simples" /></label>
@@ -1428,7 +1423,7 @@
         <label>Espécie<input id="rxSpecies" placeholder="Ex.: Canino" /></label>
         <label>Sexo<select id="rxSex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
         <label>Raça<input id="rxBreed" placeholder="Ex.: SRD" /></label>
-        <label>Pelagem<input id="rxCoat" placeholder="Ex.: preta e branca" /></label>
+        <label>Cor do animal<input id="rxCoat" placeholder="Ex.: preta e branca" /></label>
         <label>Peso<input id="rxWeight" placeholder="Ex.: 18,4 kg" /></label>
         <label>Idade<input id="rxAge" placeholder="Ex.: 4 anos" /></label>
       </div>
@@ -1509,7 +1504,7 @@
         <label>Espécie<select id="petRegistrySpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
         <label>Sexo<select id="petRegistrySex"><option value="">Não informado</option><option>Macho</option><option>Fêmea</option></select></label>
         <label>Raça<input id="petRegistryBreed" /></label>
-        <label>Pelagem<input id="petRegistryCoat" /></label>
+        <label>Cor do animal<input id="petRegistryCoat" placeholder="Ex.: preta e branca" /></label>
         <label>Idade<input id="petRegistryAge" placeholder="Ex.: 4 anos" /></label>
         <label>Peso<input id="petRegistryWeight" placeholder="Ex.: 18,4 kg" /></label>
       </div>

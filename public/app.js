@@ -1524,7 +1524,7 @@
 
     addHeading("IDENTIFICACAO DO PACIENTE E RESPONSAVEL");
     addBody(`Paciente: ${record.patientName || "Nao informado"} | Especie: ${record.species || "Nao informado"} | Sexo: ${record.sex || "Nao informado"}`);
-    addBody(`Raca: ${record.breed || "Nao informado"} | Pelagem: ${record.coat || "Nao informado"} | Peso: ${record.weight || "Nao informado"} | Idade: ${record.age || "Nao informado"}`);
+    addBody(`Raca: ${record.breed || "Nao informado"} | Cor: ${record.coat || "Nao informado"} | Peso: ${record.weight || "Nao informado"} | Idade: ${record.age || "Nao informado"}`);
     addBody(`Responsavel: ${record.tutorName || "Nao informado"}${record.tutorDocument ? ` | CPF: ${record.tutorDocument}` : ""}`);
     addBody(`Endereco: ${record.tutorAddress || "Nao informado"}`);
 
