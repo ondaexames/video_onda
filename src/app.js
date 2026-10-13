@@ -2525,6 +2525,7 @@
       setTimeout(() => $("pinInput").focus(), 50);
     }
   } else {
+    document.body.classList.add("booking-mode");
     $("userPill").style.display = "none";
     showBookingView();
     loadPublicAvailability();
