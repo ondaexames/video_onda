@@ -1771,19 +1771,16 @@
       remoteTarget.play().catch(() => {});
       if (isClient) {
         clientVideo.classList.add("client-self");
-        $("clientHeading").textContent = "Consulta em andamento";
-        $("clientIntro").textContent = "Você está conectado com a equipe da Onda Animal.";
+        markCallConnected();
       } else {
         $("remotePlaceholder").style.display = "none";
-        $("proStatus").textContent = "Cliente conectado";
-        startCallBtn.textContent = "Consulta em andamento";
-        endCallBtn.hidden = false;
-        startTimer();
+        markCallConnected();
       }
     };
     peer.onconnectionstatechange = () => {
       const state = peer.connectionState;
       if (state === "connected") {
+        markCallConnected();
         showToast("Chamada conectada com áudio e vídeo.");
       } else if (["failed", "disconnected"].includes(state)) {
         setStatus("Conexão interrompida. Tentando reconectar…");
@@ -1791,7 +1788,28 @@
         setStatus("Consulta encerrada");
       }
     };
+    peer.oniceconnectionstatechange = () => {
+      if (["connected", "completed"].includes(peer.iceConnectionState)) markCallConnected();
+      if (peer.iceConnectionState === "failed") setStatus("Não foi possível concluir a conexão. Verifique a internet e tente novamente.");
+    };
     return peer;
+  }
+
+  function markCallConnected() {
+    if (isClient) {
+      $("clientHeading").textContent = "Consulta em andamento";
+      $("clientIntro").textContent = "Você está conectado com a veterinária da Onda Animal.";
+      enterRoomBtn.textContent = "Consulta em andamento";
+      enterRoomBtn.disabled = true;
+      testDeviceBtn.hidden = true;
+    } else {
+      $("proStatus").textContent = "Cliente conectado";
+      $("remoteTitle").textContent = "Consulta em andamento";
+      $("remoteText").textContent = "Áudio e vídeo conectados com o tutor.";
+      startCallBtn.textContent = "Consulta em andamento";
+      endCallBtn.hidden = false;
+    }
+    startTimer();
   }
 
   function setStatus(text) {
@@ -1828,6 +1846,9 @@
       return;
     }
     if (signal.kind === "offer" && room.role === "client") {
+      $("clientHeading").textContent = "Veterinária conectando…";
+      $("clientIntro").textContent = "Aguarde alguns segundos enquanto finalizamos o áudio e o vídeo.";
+      enterRoomBtn.textContent = "Conectando chamada…";
       await peer.setRemoteDescription(new RTCSessionDescription(signal.payload));
       await flushCandidates();
       const answer = await peer.createAnswer();
@@ -1872,6 +1893,7 @@
         lastSignalId = Math.max(lastSignalId, signal.id);
         await processSignal(signal);
       }
+      if (isClient && data.status === "connected" && peer?.connectionState === "connected") markCallConnected();
     } catch (error) {
       if (!isEnding) setStatus(error.message);
     } finally {
