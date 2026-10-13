@@ -472,9 +472,11 @@
     .mascot-memory strong, .mascot-memory span { display: block; }
     .mascot-memory strong { color: #fff; font-size: 16px; }
     .mascot-memory span { margin-top: 4px; color: #c9d9d6; font-size: 12px; line-height: 1.4; }
-    .schedule-panel { padding: clamp(26px, 4vw, 44px); background: #fff; }
-    .schedule-panel h2 { margin: 0 0 7px; font-size: 27px; letter-spacing: -.04em; }
+    .schedule-panel { position: relative; padding: clamp(26px, 4vw, 44px); background: #fff; }
+    .schedule-panel h2 { margin: 0 170px 7px 0; font-size: 27px; letter-spacing: -.04em; }
     .schedule-panel > p { margin: 0 0 22px; color: var(--muted); line-height: 1.5; }
+    .booking-vet-access { position: absolute; top: clamp(26px, 4vw, 44px); right: clamp(26px, 4vw, 44px); min-height: 42px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #cbd4d9; border-radius: 12px; color: #294c61; background: #f7fafb; text-decoration: none; font-size: 13px; font-weight: 900; }
+    .booking-vet-access:hover { border-color: #315f7a; background: #edf4f7; }
     .public-scheduler { display: grid; grid-template-columns: minmax(150px,.72fr) minmax(220px,1.28fr); gap: 14px; }
     .scheduler-column { min-width: 0; }
     .scheduler-label { display: block; margin-bottom: 9px; color: #536167; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
@@ -869,6 +871,8 @@
       .booking-optional-fields { grid-template-columns: 1fr; }
       .booking-optional-fields .full { grid-column: auto; }
       .public-scheduler { grid-template-columns: 1fr; }
+      .booking-vet-access { position: static; margin-bottom: 18px; }
+      .schedule-panel h2 { margin-right: 0; }
       .date-choice-list { grid-template-columns: repeat(2, minmax(0,1fr)); max-height: 210px; }
       .booking-shell { padding: 0; }
       .booking-layout { border-radius: 0; }
@@ -922,6 +926,7 @@
               </div>
             </div>
             <div class="schedule-panel">
+              <a class="booking-vet-access" href="/vet">Área veterinária</a>
               <h2>Horários disponíveis</h2>
               <p>São só dois passos: escolha o dia e toque no melhor horário.</p>
               <div class="public-scheduler">
