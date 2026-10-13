@@ -27,6 +27,8 @@
   const appointmentModal = $("appointmentModal");
   const appointmentForm = $("appointmentForm");
   const endCallBtn = $("endCallBtn");
+  const reconnectCallBtn = $("reconnectCallBtn");
+  const clientReconnectBtn = $("clientReconnectBtn");
   const saveRecordBtn = $("saveRecordBtn");
   const saveState = $("saveState");
   const consultationList = $("consultationList");
@@ -81,6 +83,7 @@
   let lastSignedDocument = null;
   let documentPollTimer = null;
   let visiblePrescriptionId = "";
+  let disconnectPromptTimer = null;
   let portalAppointments = [];
   let portalOpenSlots = [];
   let portalManagedSlots = [];
@@ -1401,7 +1404,13 @@
   }
 
   async function acquireMedia(preview) {
-    if (localStream) return localStream;
+    if (localStream?.getTracks().some((track) => track.readyState === "live")) {
+      preview.srcObject = localStream;
+      await preview.play().catch(() => {});
+      return localStream;
+    }
+    localStream?.getTracks().forEach((track) => track.stop());
+    localStream = null;
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este aparelho não permite acesso à câmera");
     localStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -1783,22 +1792,106 @@
     peer.onconnectionstatechange = () => {
       const state = peer.connectionState;
       if (state === "connected") {
+        clearTimeout(disconnectPromptTimer);
+        setReconnectVisible(false);
         markCallConnected();
         showToast("Chamada conectada com áudio e vídeo.");
-      } else if (["failed", "disconnected"].includes(state)) {
+      } else if (state === "failed") {
+        clearTimeout(disconnectPromptTimer);
+        setReconnectVisible(true);
+        setStatus("A conexão caiu. Toque em Reconectar chamada.");
+      } else if (state === "disconnected") {
         setStatus("Conexão interrompida. Tentando reconectar…");
+        clearTimeout(disconnectPromptTimer);
+        disconnectPromptTimer = setTimeout(() => {
+          if (peer?.connectionState === "disconnected") {
+            setReconnectVisible(true);
+            setStatus("A conexão caiu. Toque em Reconectar chamada.");
+          }
+        }, 2500);
       } else if (state === "closed") {
-        setStatus("Consulta encerrada");
+        if (!isEnding) setReconnectVisible(true);
       }
     };
     peer.oniceconnectionstatechange = () => {
       if (["connected", "completed"].includes(peer.iceConnectionState)) markCallConnected();
-      if (peer.iceConnectionState === "failed") setStatus("Não foi possível concluir a conexão. Verifique a internet e tente novamente.");
+      if (peer.iceConnectionState === "failed") {
+        setReconnectVisible(true);
+        setStatus("Não foi possível concluir a conexão. Toque em Reconectar chamada.");
+      }
     };
     return peer;
   }
 
+  function setReconnectVisible(visible) {
+    if (isClient) {
+      clientReconnectBtn.hidden = !visible;
+      if (visible) {
+        enterRoomBtn.hidden = true;
+        testDeviceBtn.hidden = true;
+      }
+    } else {
+      reconnectCallBtn.hidden = !visible;
+    }
+  }
+
+  function resetPeerConnection(remoteTarget) {
+    clearTimeout(disconnectPromptTimer);
+    if (peer) {
+      peer.onconnectionstatechange = null;
+      peer.oniceconnectionstatechange = null;
+      peer.onicecandidate = null;
+      peer.ontrack = null;
+      peer.close();
+    }
+    peer = null;
+    offerSent = false;
+    pendingCandidates = [];
+    remoteTarget.srcObject = null;
+    remoteTarget.classList.remove("active");
+    return createPeer(remoteTarget);
+  }
+
+  async function createAndSendOffer() {
+    if (!peer) createPeer(remoteVideo);
+    const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+    await peer.setLocalDescription(offer);
+    offerSent = true;
+    await sendSignal("offer", peer.localDescription.toJSON());
+  }
+
+  async function reconnectCall() {
+    if (!room || isEnding) return showToast("Esta consulta já foi encerrada.");
+    const button = isClient ? clientReconnectBtn : reconnectCallBtn;
+    button.disabled = true;
+    button.textContent = "Reconectando…";
+    setStatus("Reconectando chamada…");
+    try {
+      const preview = isClient ? clientVideo : localVideo;
+      const remoteTarget = isClient ? clientRemoteVideo : remoteVideo;
+      await acquireMedia(preview);
+      if (isClient) {
+        clientVideo.hidden = false;
+        cameraEmpty.hidden = true;
+      } else {
+        localWrap.classList.add("active");
+      }
+      resetPeerConnection(remoteTarget);
+      startPolling();
+      await sendSignal("reconnect", { requestedAt: Date.now() });
+      if (isClient) await sendSignal("ready", { joinedAt: Date.now(), reconnecting: true });
+      showToast("Tentando restabelecer a chamada…");
+    } catch (error) {
+      setReconnectVisible(true);
+      showToast(mediaErrorMessage(error));
+    } finally {
+      button.disabled = false;
+      button.textContent = "↻ Reconectar chamada";
+    }
+  }
+
   function markCallConnected() {
+    setReconnectVisible(false);
     if (isClient) {
       $("clientHeading").textContent = "Consulta em andamento";
       $("clientIntro").textContent = "Você está conectado com a veterinária da Onda Animal.";
@@ -1844,12 +1937,28 @@
       await loadClientDocuments(true);
       return;
     }
+    if (signal.kind === "reconnect") {
+      setStatus("A outra pessoa está reconectando…");
+      setReconnectVisible(false);
+      try {
+        if (room.role === "client") {
+          await acquireMedia(clientVideo);
+          clientVideo.hidden = false;
+          cameraEmpty.hidden = true;
+          resetPeerConnection(clientRemoteVideo);
+          await sendSignal("ready", { joinedAt: Date.now(), reconnecting: true });
+        } else {
+          resetPeerConnection(remoteVideo);
+        }
+      } catch (error) {
+        setReconnectVisible(true);
+        showToast(mediaErrorMessage(error));
+      }
+      return;
+    }
     if (signal.kind === "ready" && room.role === "host" && !offerSent) {
       setStatus("Cliente entrou. Conectando…");
-      const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
-      await peer.setLocalDescription(offer);
-      offerSent = true;
-      await sendSignal("offer", peer.localDescription.toJSON());
+      await createAndSendOffer();
       return;
     }
     if (signal.kind === "offer" && room.role === "client") {
@@ -2145,6 +2254,8 @@
 
   function endLocally(message) {
     isEnding = true;
+    clearTimeout(disconnectPromptTimer);
+    setReconnectVisible(false);
     clearTimeout(pollTimer);
     clearInterval(elapsedTimer);
     peer?.close();
@@ -2493,6 +2604,8 @@
   $("downloadForSignature").addEventListener("click", downloadPrescriptionPdf);
   $("uploadSignedPrescription").addEventListener("click", uploadSignedPrescription);
   endCallBtn.addEventListener("click", () => finishModal.classList.add("open"));
+  reconnectCallBtn.addEventListener("click", reconnectCall);
+  clientReconnectBtn.addEventListener("click", reconnectCall);
   saveRecordBtn.addEventListener("click", () => saveRecord(recordStatus));
 
   enterRoomBtn.addEventListener("click", enterClientRoom);

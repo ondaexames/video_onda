@@ -932,7 +932,7 @@ async function handleSignalingApi(request, env, url, db) {
     const senderId = String(body.senderId || "").slice(0, 80);
     const kind = String(body.kind || "");
     const payload = JSON.stringify(body.payload ?? null);
-    if (!senderId || !["ready", "offer", "answer", "candidate", "hangup", "chat", "document"].includes(kind) || payload.length > 60000) return responseJson({ error: "Sinal inválido" }, 400);
+    if (!senderId || !["ready", "offer", "answer", "candidate", "hangup", "chat", "document", "reconnect"].includes(kind) || payload.length > 60000) return responseJson({ error: "Sinal inválido" }, 400);
     const now = Math.floor(Date.now() / 1000);
     await db.batch([
       db.prepare("INSERT INTO signals (room_id, sender_id, role, kind, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(body.roomId, senderId, body.role, kind, payload, now),

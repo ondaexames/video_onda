@@ -316,6 +316,8 @@
       box-shadow: 0 8px 20px rgba(38,50,56,.16);
     }
     .call-btn.danger { background: var(--danger); color: #fff; }
+    .call-btn.reconnect-action { background: #eaf8f3; color: #207b5b; border: 1px solid #9ed5c1; }
+    .call-btn.reconnect-action:hover { background: #dff3eb; }
     .call-btn.cancel-action { background: #fff3f0; color: #a33a2c; border: 1px solid #f0b8ae; }
     .call-btn:disabled, .primary-wide:disabled, .secondary-wide:disabled { opacity: .58; cursor: not-allowed; }
     .invite-panel {
@@ -1122,6 +1124,7 @@
               <button class="round-btn" id="cameraBtn" type="button" aria-label="Ligar ou desligar câmera" title="Câmera">📷</button>
               <button class="round-btn" id="micBtn" type="button" aria-label="Ligar ou desligar microfone" title="Microfone">🎙️</button>
               <button class="call-btn" id="startCallBtn" type="button">Iniciar atendimento selecionado</button>
+              <button class="call-btn reconnect-action" id="reconnectCallBtn" type="button" hidden>↻ Reconectar chamada</button>
               <button class="call-btn cancel-action" id="cancelScheduledBtn" type="button" hidden>Cancelar consulta</button>
               <button class="call-btn cancel-action" id="markRefundedBtn" type="button" hidden>Registrar devolução</button>
               <button class="call-btn danger" id="endCallBtn" type="button" hidden>Encerrar chamada</button>
@@ -1223,6 +1226,7 @@
               <div class="client-actions">
                 <button class="secondary-wide" id="testDeviceBtn" type="button">Testar câmera e microfone</button>
                 <button class="primary-wide" id="enterRoomBtn" type="button">Permitir câmera e entrar</button>
+                <button class="call-btn reconnect-action" id="clientReconnectBtn" type="button" hidden>↻ Reconectar chamada</button>
               </div>
               <div class="client-mascot-caption"><strong>Pri &amp; Negão</strong>Para sempre na Onda Animal</div>
               <img class="client-pets" src="__PET_CORNER_DATA_URL__" alt="Pri e Negão, mascotes da Onda Animal" />
