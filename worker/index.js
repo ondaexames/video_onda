@@ -403,10 +403,13 @@ async function handlePublicApi(request, env, url, db) {
     const id = decodeURIComponent(url.pathname.slice("/api/documents/".length));
     const token = url.searchParams.get("token") || "";
     const document = await db.prepare("SELECT * FROM prescription_documents WHERE id = ?").bind(id).first();
-    if (!document || await sha256(token) !== document.public_token_hash) return responseJson({ error: "Documento não encontrado" }, 404);
+    const roomId = url.searchParams.get("room") || "";
+    const publicAccess = Boolean(document && token && await sha256(token) === document.public_token_hash);
+    const roomAccess = Boolean(document && roomId === document.room_id && await getValidRoom(db, roomId, token, "client"));
+    if (!document || (!publicAccess && !roomAccess)) return responseJson({ error: "Documento não encontrado" }, 404);
     const object = await env.DOCUMENTS.get(document.object_key);
     if (!object) return responseJson({ error: "Arquivo não encontrado" }, 404);
-    return new Response(object.body, { headers: { "content-type": "application/pdf", "content-disposition": `inline; filename=\"${document.filename.replace(/[\"\r\n]/g, "")}\"`, "cache-control": "private, no-store" } });
+    return new Response(object.body, { headers: { "content-type": "application/pdf", "content-disposition": `attachment; filename=\"${document.filename.replace(/[\"\r\n]/g, "")}\"`, "cache-control": "private, no-store" } });
   }
 
   return null;
@@ -907,6 +910,20 @@ async function handleSignalingApi(request, env, url, db) {
     if (!room) return responseJson({ error: "Link inválido ou expirado" }, 404);
     return responseJson({ roomId: room.id, patientName: room.patient_name, tutorName: room.tutor_name, professionalName: room.professional_name, status: room.status, expiresAt: room.expires_at });
   }
+  if (request.method === "GET" && url.pathname === "/api/room-documents") {
+    const roomId = url.searchParams.get("room") || "";
+    const token = url.searchParams.get("token") || "";
+    const room = await getValidRoom(db, roomId, token, "client");
+    if (!room) return responseJson({ error: "Sala inválida ou expirada" }, 403);
+    const result = await db.prepare("SELECT id, filename, created_at FROM prescription_documents WHERE room_id = ? AND status = 'ready' ORDER BY created_at DESC LIMIT 10").bind(roomId).all();
+    const documents = (result.results || []).map((document) => ({
+      id: document.id,
+      filename: document.filename,
+      createdAt: document.created_at,
+      downloadUrl: `/api/documents/${encodeURIComponent(document.id)}?room=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`,
+    }));
+    return responseJson({ documents });
+  }
   if (request.method === "POST" && url.pathname === "/api/signals") {
     const body = await readJson(request);
     if (!body) return responseJson({ error: "Dados inválidos" }, 400);
@@ -915,7 +932,7 @@ async function handleSignalingApi(request, env, url, db) {
     const senderId = String(body.senderId || "").slice(0, 80);
     const kind = String(body.kind || "");
     const payload = JSON.stringify(body.payload ?? null);
-    if (!senderId || !["ready", "offer", "answer", "candidate", "hangup", "chat"].includes(kind) || payload.length > 60000) return responseJson({ error: "Sinal inválido" }, 400);
+    if (!senderId || !["ready", "offer", "answer", "candidate", "hangup", "chat", "document"].includes(kind) || payload.length > 60000) return responseJson({ error: "Sinal inválido" }, 400);
     const now = Math.floor(Date.now() / 1000);
     await db.batch([
       db.prepare("INSERT INTO signals (room_id, sender_id, role, kind, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(body.roomId, senderId, body.role, kind, payload, now),

@@ -413,7 +413,18 @@
 
     .client-shell { height: 100%; min-height: 0; display: grid; place-items: center; padding: 0; }
     .client-layout { width: min(1100px, 100%); display: grid; grid-template-columns: 1.1fr .9fr; overflow: hidden; }
+    .client-media { min-width: 0; display: flex; flex-direction: column; background: #1b2023; }
     .client-preview { min-height: 560px; position: relative; background: #1b2023; display: grid; place-items: center; }
+    .client-media .client-preview { flex: 1 1 auto; min-height: 500px; }
+    .client-documents { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #d9e2e6; background: #f5fbf8; }
+    .client-documents[hidden] { display: none; }
+    .client-document-copy { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .client-document-icon { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 13px; color: #fff; background: var(--green); font-size: 12px; font-weight: 950; }
+    .client-document-copy strong, .client-document-copy span { display: block; }
+    .client-document-copy strong { color: #214b3e; font-size: 14px; }
+    .client-document-copy span { margin-top: 3px; color: #61736d; font-size: 12px; }
+    .client-document-download { min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border-radius: 12px; color: #fff; background: var(--green); text-decoration: none; font-size: 13px; font-weight: 900; box-shadow: 0 8px 18px rgba(44,145,105,.2); }
+    .client-document-download:hover { background: #247d5b; }
     .client-preview video { position: absolute; inset: 0; }
     .client-remote {
       position: absolute;
@@ -861,6 +872,7 @@
       .record-body { display: flex; }
       .client-layout { grid-template-columns: 1fr; }
       .client-preview { min-height: 360px; }
+      .client-media .client-preview { min-height: 360px; }
       .booking-layout { grid-template-columns: 1fr; }
       body.booking-mode .booking-layout { grid-template-columns: 1fr; }
       .booking-intro { min-height: 360px; }
@@ -883,6 +895,8 @@
       .document-actions .full { grid-column: auto; }
       .soft-btn.full { grid-column: auto; }
       .modal-actions { grid-template-columns: 1fr; }
+      .client-documents { align-items: stretch; flex-direction: column; }
+      .client-document-download { width: 100%; }
       .form-grid { grid-template-columns: 1fr; }
       .form-grid .full { grid-column: auto; }
       .booking-pet-fields { grid-column: auto; grid-template-columns: 1fr; }
@@ -1178,14 +1192,20 @@
       <section class="view" id="clientView">
         <div class="client-shell">
           <div class="card client-layout">
-            <div class="client-preview">
-              <div class="camera-empty" id="cameraEmpty">
-                <div class="camera-icon">📷</div>
-                <strong>Sua câmera aparecerá aqui</strong>
-                <span>Faça o teste antes de entrar na sala.</span>
+            <div class="client-media">
+              <div class="client-preview">
+                <div class="camera-empty" id="cameraEmpty">
+                  <div class="camera-icon">📷</div>
+                  <strong>Sua câmera aparecerá aqui</strong>
+                  <span>Faça o teste antes de entrar na sala.</span>
+                </div>
+                <video id="clientVideo" autoplay playsinline muted hidden></video>
+                <video id="clientRemoteVideo" class="client-remote" autoplay playsinline></video>
               </div>
-              <video id="clientVideo" autoplay playsinline muted hidden></video>
-              <video id="clientRemoteVideo" class="client-remote" autoplay playsinline></video>
+              <div class="client-documents" id="clientDocuments" hidden aria-live="polite">
+                <div class="client-document-copy"><span class="client-document-icon">PDF</span><div><strong>Receita disponível</strong><span id="clientDocumentName">A veterinária enviou sua receita assinada.</span></div></div>
+                <a class="client-document-download" id="clientPrescriptionDownload" href="#" target="_blank" rel="noopener">Baixar receita em PDF</a>
+              </div>
             </div>
             <div class="client-side">
               <div class="mini-brand">ONDA ANIMAL</div>
@@ -1373,11 +1393,11 @@
     <div class="modal wide">
       <div class="modal-icon">✓</div>
       <h2 id="signedPrescriptionTitle">Assinar e enviar receita</h2>
-      <p>A assinatura desenhada na tela não substitui certificado digital. Use o certificado da veterinária ou assine pelo SimplesVet e envie o PDF final por aqui.</p>
+      <p>A assinatura desenhada na tela não substitui certificado digital. Assine o PDF com o certificado da veterinária ou pelo gov.br e envie o arquivo final por aqui.</p>
       <div class="workflow-steps">
         <div class="workflow-step"><b>1</b><div><strong>Baixe a receita</strong><span>O PDF sai com dados do tutor, animal, medicamentos e CRMV.</span></div></div>
-        <div class="workflow-step"><b>2</b><div><strong>Assine com certificado digital</strong><span>Faça a assinatura certificada no serviço escolhido ou no fluxo do SimplesVet.</span></div></div>
-        <div class="workflow-step"><b>3</b><div><strong>Envie o PDF assinado</strong><span>O sistema cria um link seguro e envia ao WhatsApp do tutor quando a integração estiver ativa.</span></div></div>
+        <div class="workflow-step"><b>2</b><div><strong>Assine com certificado digital</strong><span>Faça a assinatura certificada no serviço escolhido ou pelo gov.br.</span></div></div>
+        <div class="workflow-step"><b>3</b><div><strong>Libere para o tutor</strong><span>O botão para baixar o PDF aparece automaticamente logo abaixo do vídeo. O WhatsApp continua como cópia de segurança.</span></div></div>
       </div>
       <button class="secondary-wide" id="downloadForSignature" type="button" style="width:100%;margin-bottom:14px">Baixar receita para assinar</button>
       <label>Receita assinada em PDF<input id="signedPrescriptionFile" type="file" accept="application/pdf,.pdf" /></label>

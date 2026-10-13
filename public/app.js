@@ -79,6 +79,8 @@
   let portalRefreshTimer = null;
   let publicAppointment = null;
   let lastSignedDocument = null;
+  let documentPollTimer = null;
+  let visiblePrescriptionId = "";
   let portalAppointments = [];
   let portalOpenSlots = [];
   let portalManagedSlots = [];
@@ -1735,16 +1737,17 @@
         headers: staffHeaders(),
         body: JSON.stringify({ documentId: uploaded.documentId, shareUrl: uploaded.shareUrl }),
       });
+      await sendSignal("document", { documentId: uploaded.documentId, filename: file.name }).catch(() => {});
       $("signedPrescriptionStatus").classList.add("paid");
       if (sent.whatsappUrl && whatsappWindow) {
         whatsappWindow.location.href = sent.whatsappUrl;
-        $("signedPrescriptionStatus").textContent = "WhatsApp aberto com o link da receita. Confirme o envio.";
-        showToast("Confirme o envio da receita no WhatsApp.");
+        $("signedPrescriptionStatus").textContent = "Receita liberada na sala. O WhatsApp foi aberto como cópia de segurança.";
+        showToast("Receita disponível para o tutor baixar na sala.");
       } else {
         whatsappWindow?.close();
         await navigator.clipboard.writeText(uploaded.shareUrl).catch(() => {});
-        $("signedPrescriptionStatus").textContent = "Receita salva. O link seguro foi copiado para você enviar ao tutor.";
-        showToast("Link seguro da receita copiado.");
+        $("signedPrescriptionStatus").textContent = "Receita liberada na sala. O link seguro também foi copiado.";
+        showToast("Receita disponível para o tutor baixar na sala.");
       }
     } catch (error) {
       whatsappWindow?.close();
@@ -1837,6 +1840,10 @@
   }
 
   async function processSignal(signal) {
+    if (signal.kind === "document" && room.role === "client") {
+      await loadClientDocuments(true);
+      return;
+    }
     if (signal.kind === "ready" && room.role === "host" && !offerSent) {
       setStatus("Cliente entrou. Conectando…");
       const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
@@ -1904,6 +1911,37 @@
   function startPolling() {
     clearTimeout(pollTimer);
     pollSignals();
+  }
+
+  function showClientPrescription(document) {
+    if (!document?.id || !document.downloadUrl) return;
+    const downloadUrl = new URL(document.downloadUrl, location.origin);
+    if (downloadUrl.origin !== location.origin) return;
+    visiblePrescriptionId = document.id;
+    $("clientDocumentName").textContent = document.filename || "A veterinária enviou sua receita assinada.";
+    $("clientPrescriptionDownload").href = downloadUrl.href;
+    $("clientDocuments").hidden = false;
+  }
+
+  async function loadClientDocuments(notify = false) {
+    if (!isClient || !room?.roomId || !room?.token) return;
+    try {
+      const query = new URLSearchParams({ room: room.roomId, token: room.token });
+      const data = await api(`/api/room-documents?${query}`);
+      const document = data.documents?.[0];
+      if (!document) return;
+      const isNew = document.id !== visiblePrescriptionId;
+      showClientPrescription(document);
+      if (notify && isNew) showToast("A Dra. Bruna enviou sua receita. Toque para baixar o PDF.");
+    } catch {
+      // O documento pode ainda estar sendo processado; a próxima consulta tenta novamente.
+    }
+  }
+
+  function startDocumentPolling() {
+    clearInterval(documentPollTimer);
+    loadClientDocuments().catch(() => {});
+    documentPollTimer = setInterval(() => loadClientDocuments(true), 4000);
   }
 
   function startTimer() {
@@ -1991,6 +2029,7 @@
     $("clientSchedule").textContent = "Atendimento iniciado";
     $("clientUnit").textContent = "Onda Animal";
     $("clientIntro").textContent = `Olá, ${data.tutorName}. Confira os dados e permita o uso da câmera para entrar.`;
+    startDocumentPolling();
   }
 
   async function loadAppointmentClient() {
@@ -2060,6 +2099,7 @@
       paymentModal.classList.remove("open");
       room = publicAppointment.room;
       sessionStorage.setItem(`ondaGuestToken:${room.roomId}`, room.token);
+      startDocumentPolling();
       enterRoomBtn.disabled = false;
       testDeviceBtn.disabled = false;
       $("clientHeading").textContent = "Sua consulta está pronta";
