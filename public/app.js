@@ -519,8 +519,8 @@
     $("headerPatient").textContent = `${item.patient_name} • ${item.species}`;
     $("headerTutor").textContent = `${item.tutor_name} • ${when.day}, ${when.time}`;
     $("proStatus").textContent = item.payment_status === "paid" ? "Pagamento confirmado" : "Pagamento pendente";
-    startCallBtn.disabled = false;
-    startCallBtn.textContent = "Iniciar e avisar no WhatsApp";
+    startCallBtn.disabled = item.payment_status !== "paid";
+    startCallBtn.textContent = item.payment_status === "paid" ? "Iniciar e avisar no WhatsApp" : "Aguardando confirmação do Pix";
   }
 
   function showConsultationWorkspace(updateHistory = true) {
@@ -1146,8 +1146,8 @@
           $("headerPatient").textContent = `${item.patient_name} • ${item.species}`;
           $("headerTutor").textContent = `${item.tutor_name} • ${when.day}, ${when.time}`;
           $("proStatus").textContent = paid ? "Pagamento confirmado" : "Pagamento pendente";
-          startCallBtn.disabled = false;
-          startCallBtn.textContent = "Iniciar e avisar no WhatsApp";
+          startCallBtn.disabled = !paid;
+          startCallBtn.textContent = paid ? "Iniciar e avisar no WhatsApp" : "Aguardando confirmação do Pix";
           showToast(`Atendimento de ${item.patient_name} selecionado.`);
         }
         renderConsultations(appointments, records, openSlots);
@@ -1199,6 +1199,13 @@
       if (!selectedCalendarDate || !selectedCalendarDate.startsWith(calendarMonthKey())) selectedCalendarDate = localDateKey(new Date()).startsWith(calendarMonthKey()) ? localDateKey(new Date()) : `${calendarMonthKey()}-01`;
       renderMonthCalendar();
       renderConsultations(schedule.appointments || [], history.consultations || [], availability.slots || []);
+      const selected = portalAppointments.find((item) => item.id === selectedAppointmentId);
+      if (selected && professionalView.classList.contains("active") && !room && !selected.room_id && !["cancelled", "completed"].includes(selected.status)) {
+        const paid = selected.payment_status === "paid";
+        $("proStatus").textContent = paid ? "Pagamento confirmado" : "Pagamento pendente";
+        startCallBtn.disabled = !paid;
+        startCallBtn.textContent = paid ? "Iniciar e avisar no WhatsApp" : "Aguardando confirmação do Pix";
+      }
     } catch (error) {
       if (/expirado/i.test(error.message)) sessionStorage.removeItem("ondaStaffToken");
       if (!quiet) showToast(error.message);
@@ -1208,13 +1215,17 @@
   function startPortalAutoRefresh() {
     clearInterval(portalRefreshTimer);
     portalRefreshTimer = setInterval(() => {
-      if (document.visibilityState !== "visible" || !vetPortalView.classList.contains("active") || !sessionStorage.getItem("ondaStaffToken")) return;
+      if (document.visibilityState !== "visible" || (!vetPortalView.classList.contains("active") && !professionalView.classList.contains("active")) || !sessionStorage.getItem("ondaStaffToken")) return;
       loadConsultations(true);
     }, 8000);
   }
 
   async function startScheduledAppointment() {
     if (!selectedAppointmentId) return showToast("Selecione um atendimento agendado na coluna da esquerda.");
+    const selectedAppointment = portalAppointments.find((item) => item.id === selectedAppointmentId);
+    if (!selectedAppointment || selectedAppointment.payment_status !== "paid") {
+      return showToast("A chamada só pode ser iniciada após a confirmação do pagamento Pix.");
+    }
     const appointmentId = selectedAppointmentId;
     const whatsappWindow = window.open("about:blank", "ondaWhatsApp");
     startCallBtn.disabled = true;
@@ -2080,7 +2091,7 @@
   startCallBtn.addEventListener("click", () => {
     if (room) return showToast("A sala já está aberta.");
     if (selectedAppointmentId) return startScheduledAppointment();
-    openAppointment();
+    showToast("Agende a consulta e confirme o pagamento antes de abrir a chamada.");
   });
   $("cancelScheduledBtn").addEventListener("click", openCancelScheduled);
   $("markRefundedBtn").addEventListener("click", markAppointmentRefunded);
@@ -2210,6 +2221,7 @@
   $("internalBookingClient").addEventListener("change", loadInternalBookingPets);
   $("internalBookingForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const paymentWindow = window.open("about:blank", "ondaPaymentWhatsApp");
     $("confirmInternalBooking").disabled = true;
     $("confirmInternalBooking").textContent = "Agendando…";
     try {
@@ -2227,11 +2239,12 @@
         }),
       });
       internalBookingModal.classList.remove("open");
+      if (data.whatsappUrl && paymentWindow) paymentWindow.location.href = data.whatsappUrl;
+      else paymentWindow?.close();
       await loadConsultations(true);
-      showToast(data.paymentCreated
-        ? "Agendamento confirmado e cobrança Pix preparada."
-        : "Agendamento confirmado. Pagamento manual liberado enquanto o Pix Banrisul não estiver ativo.");
+      showToast("Agendamento confirmado. WhatsApp preparado com o link para pagamento.");
     } catch (error) {
+      paymentWindow?.close();
       showToast(error.message);
       await loadConsultations(true);
     } finally {

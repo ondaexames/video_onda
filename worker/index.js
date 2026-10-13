@@ -212,8 +212,11 @@ async function regenerateScheduleSlots(db, settings) {
 
 async function getValidRoom(db, roomId, token, role) {
   if (!roomId || !token || !["host", "client"].includes(role)) return null;
-  const room = await db.prepare("SELECT id, host_token_hash, guest_token_hash, patient_name, tutor_name, professional_name, status, expires_at FROM rooms WHERE id = ?").bind(roomId).first();
+  const room = await db.prepare(`SELECT r.id, r.host_token_hash, r.guest_token_hash, r.patient_name, r.tutor_name,
+    r.professional_name, r.status, r.expires_at, a.id AS appointment_id, a.payment_status
+    FROM rooms r LEFT JOIN appointments a ON a.room_id = r.id WHERE r.id = ?`).bind(roomId).first();
   if (!room || room.expires_at < Math.floor(Date.now() / 1000)) return null;
+  if (room.appointment_id && room.payment_status !== "paid") return null;
   const suppliedHash = await sha256(token);
   const expectedHash = role === "host" ? room.host_token_hash : room.guest_token_hash;
   return suppliedHash === expectedHash ? room : null;
@@ -530,6 +533,7 @@ async function handleStaffApi(request, env, url, db) {
     const allowedServices = ["Consulta por vídeo", "Retorno por vídeo", "Teleorientação"];
     const serviceType = allowedServices.includes(body.serviceType) ? body.serviceType : "Consulta por vídeo";
     if (!slotId || !clientId || !petId) return responseJson({ error: "Selecione horário, tutor e animal" }, 400);
+    if (!banrisulReady(env) && !paymentTestMode(env)) return responseJson({ error: "Configure o Pix Banrisul antes de criar um agendamento pela recepção" }, 503);
     const slot = await db.prepare("SELECT * FROM availability_slots WHERE id = ? AND status = 'open'").bind(slotId).first();
     if (!slot) return responseJson({ error: "Este horário não está mais disponível" }, 409);
     const client = await db.prepare("SELECT * FROM clients WHERE id = ?").bind(clientId).first();
@@ -545,17 +549,21 @@ async function handleStaffApi(request, env, url, db) {
       await db.prepare("INSERT INTO appointments (id, public_token, public_token_hash, client_id, pet_id, slot_id, chief_complaint, booking_source, service_type, rpvar_valid, status, payment_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', 'pending', ?, ?)")
         .bind(appointmentId, publicToken, await sha256(publicToken), clientId, petId, slotId, cleanText(body.chiefComplaint, 3000), bookingSource, serviceType, body.rpvarValid ? 1 : 0, now, now).run();
 
-      let paymentCreated = false;
-      if (banrisulReady(env)) {
+      let paymentCreated = true;
+      if (paymentTestMode(env)) {
+        const fakePaymentId = `test_${appointmentId}`;
+        const fakePix = `00020126360014BR.GOV.BCB.PIX0114ONDA-TESTE-${appointmentId.slice(0, 8)}5204000053039865406${(Number(slot.price_cents) / 100).toFixed(2)}5802BR5911ONDA ANIMAL6008GRAVATAI62070503***6304TEST`;
+        await db.prepare("UPDATE appointments SET payment_provider = 'banrisul', provider_payment_id = ?, pix_payload = ?, invoice_url = '', updated_at = ? WHERE id = ?")
+          .bind(fakePaymentId, fakePix, now, appointmentId).run();
+      } else {
         const payment = await createBanrisulPix(env, appointmentId, Number(slot.price_cents) / 100, pet.name, { name: client.name, cpf: client.cpf, email: client.email, phone: client.phone });
         await db.prepare("UPDATE appointments SET payment_provider = 'banrisul', provider_payment_id = ?, pix_payload = ?, pix_image = ?, invoice_url = ?, updated_at = ? WHERE id = ?")
           .bind(payment.id, payment.pixPayload, payment.pixImage, payment.invoiceUrl, now, appointmentId).run();
-        paymentCreated = true;
-      } else {
-        await db.prepare("UPDATE appointments SET payment_status = 'paid', status = 'ready', updated_at = ? WHERE id = ?")
-          .bind(now, appointmentId).run();
       }
-      return responseJson({ ok: true, appointmentId, paymentCreated, appointmentUrl: `${publicOrigin(request)}/consulta?appointment=${encodeURIComponent(appointmentId)}&token=${encodeURIComponent(publicToken)}` }, 201);
+      const appointmentUrl = `${publicOrigin(request)}/consulta?appointment=${encodeURIComponent(appointmentId)}&token=${encodeURIComponent(publicToken)}`;
+      const dateText = new Date(Number(slot.starts_at) * 1000).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+      const whatsappUrl = whatsappLink(client.phone, `Olá, ${client.name}! A consulta por vídeo de ${pet.name} foi agendada para ${dateText}. Para confirmar o atendimento, faça o pagamento Pix neste link seguro: ${appointmentUrl}`);
+      return responseJson({ ok: true, appointmentId, paymentCreated, appointmentUrl, whatsappUrl, paymentStatus: "pending", testMode: paymentTestMode(env) }, 201);
     } catch (error) {
       await db.batch([
         db.prepare("UPDATE availability_slots SET status = 'open' WHERE id = ?").bind(slotId),
@@ -749,20 +757,7 @@ async function handleStaffApi(request, env, url, db) {
     if (!appointment) return responseJson({ error: "Agendamento não encontrado" }, 404);
     if (appointment.status === "cancelled") return responseJson({ error: "Esta consulta foi cancelada" }, 409);
     if (appointment.room_id) return responseJson({ error: "Este atendimento já foi iniciado" }, 409);
-    if (!appointment.provider_payment_id) {
-      if (!banrisulReady(env) && appointment.booking_source !== "site") {
-        await db.prepare("UPDATE appointments SET payment_status = 'paid', status = 'ready', updated_at = ? WHERE id = ?")
-          .bind(Math.floor(Date.now() / 1000), appointment.id).run();
-      } else if (!banrisulReady(env)) {
-        return responseJson({ error: "Configure o Pix Banrisul antes de iniciar este atendimento" }, 503);
-      } else {
-      const payment = await createBanrisulPix(env, appointment.id, Number(appointment.price_cents) / 100, appointment.patient_name, {
-        name: appointment.tutor_name, cpf: appointment.tutor_document, email: appointment.tutor_email, phone: appointment.phone,
-      });
-      await db.prepare("UPDATE appointments SET payment_provider = 'banrisul', provider_payment_id = ?, pix_payload = ?, pix_image = ?, invoice_url = ?, updated_at = ? WHERE id = ?")
-        .bind(payment.id, payment.pixPayload, payment.pixImage, payment.invoiceUrl, Math.floor(Date.now() / 1000), appointment.id).run();
-      }
-    }
+    if (appointment.payment_status !== "paid") return responseJson({ error: "Pagamento Pix ainda não confirmado. A sala permanece bloqueada." }, 402);
     const roomId = randomToken(9);
     const hostToken = randomToken();
     const guestToken = randomToken();
@@ -835,6 +830,8 @@ async function handleStaffApi(request, env, url, db) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/rooms") {
+    return responseJson({ error: "Agende a consulta e confirme o pagamento antes de abrir a sala" }, 409);
+    /* Fluxo legado mantido abaixo apenas para referência de dados já existentes. */
     const body = await readJson(request) || {};
     const roomId = randomToken(9);
     const hostToken = randomToken();
