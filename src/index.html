@@ -1222,8 +1222,13 @@
         <label>CPF<input id="bookingDocument" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" /></label>
         <label>Nome do animal<input id="bookingPatient" required autocomplete="off" placeholder="Como ele se chama?" /></label>
         <label>Espécie<select id="bookingSpecies"><option>Canino</option><option>Felino</option><option>Outro</option></select></label>
-        <label>CEP<input id="bookingPostalCode" required autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" /></label>
-        <label>Endereço completo<input id="bookingAddress" required autocomplete="street-address" placeholder="Rua, número, bairro e cidade" /></label>
+        <label>CEP
+          <span class="cep-lookup"><input id="bookingPostalCode" required autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" /><button id="lookupBookingCep" type="button">Buscar</button></span>
+          <small class="field-help" id="bookingCepStatus" aria-live="polite">Digite o CEP para preencher o endereço.</small>
+        </label>
+        <label>Número<input id="bookingAddressNumber" required autocomplete="address-line2" placeholder="Ex.: 67" /></label>
+        <label class="full">Rua, bairro, cidade e estado<input id="bookingAddress" required autocomplete="street-address" placeholder="Preenchido automaticamente pelo CEP" /></label>
+        <label class="full">Complemento (opcional)<input id="bookingAddressComplement" autocomplete="address-line2" placeholder="Apartamento, bloco ou referência" /></label>
         <label class="full">Motivo da consulta<textarea id="bookingComplaint" required placeholder="Conte em poucas palavras o que está acontecendo"></textarea></label>
         <div class="booking-pet-fields">
           <h3>Dados obrigatórios do animal</h3>

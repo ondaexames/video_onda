@@ -280,9 +280,10 @@ async function handlePublicApi(request, env, url, db) {
     const weight = cleanName(body.weight);
     const chiefComplaint = cleanText(body.chiefComplaint, 3000);
     const postalCode = onlyDigits(body.postalCode);
+    const addressNumber = cleanName(body.addressNumber);
     const streetAddress = cleanText(body.tutorAddress, 260);
     const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!tutorName || phone.length < 10 || !emailValid || tutorDocument.length !== 11 || !patientName || !species || !sex || !breed || !coat || !age || !weight || !body.slotId || !chiefComplaint || postalCode.length !== 8 || !streetAddress) return responseJson({ error: "Preencha todos os dados obrigatórios do tutor, do animal, do endereço e da consulta" }, 400);
+    if (!tutorName || phone.length < 10 || !emailValid || tutorDocument.length !== 11 || !patientName || !species || !sex || !breed || !coat || !age || !weight || !body.slotId || !chiefComplaint || postalCode.length !== 8 || !addressNumber || !streetAddress) return responseJson({ error: "Preencha todos os dados obrigatórios do tutor, do animal, do endereço e da consulta" }, 400);
     const fullAddress = `${streetAddress} • CEP ${postalCode.replace(/(\d{5})(\d{3})/, "$1-$2")}`;
     if (!banrisulReady(env) && !paymentTestMode(env)) return responseJson({ error: "O Pix Banrisul ainda está sendo configurado. Tente novamente em breve." }, 503);
     const slot = await db.prepare("SELECT * FROM availability_slots WHERE id = ? AND status = 'open'").bind(String(body.slotId)).first();

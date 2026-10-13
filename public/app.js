@@ -86,6 +86,7 @@
   let portalClients = [];
   let selectedClientId = null;
   let lastRegistryCep = "";
+  let lastBookingCep = "";
   let reminderTimer = null;
   let remindedAppointmentId = null;
   let publicSlots = [];
@@ -671,6 +672,7 @@
       status.className = "field-help error";
       return;
     }
+    if (button.disabled) return;
     if (cep === lastRegistryCep && $("registryClientAddress").value.trim()) return;
     button.disabled = true;
     button.textContent = "Buscando…";
@@ -859,6 +861,51 @@
     ($("bookingTutor").value ? $("bookingPatient") : $("bookingTutor")).focus();
   }
 
+  async function lookupBookingCep() {
+    const input = $("bookingPostalCode");
+    const button = $("lookupBookingCep");
+    const status = $("bookingCepStatus");
+    const cep = input.value.replace(/\D/g, "");
+    if (cep.length !== 8) {
+      status.textContent = "Digite um CEP válido com 8 números.";
+      status.className = "field-help error";
+      return;
+    }
+    if (button.disabled) return;
+    if (cep === lastBookingCep && $("bookingAddress").value.trim()) return;
+    button.disabled = true;
+    button.textContent = "Buscando…";
+    status.textContent = "Consultando endereço…";
+    status.className = "field-help";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal });
+      if (!response.ok) throw new Error("Falha ao consultar CEP");
+      const data = await response.json();
+      if (data.erro) throw new Error("CEP não encontrado");
+      if ($("bookingPostalCode").value.replace(/\D/g, "") !== cep) return;
+      const cityState = [data.localidade, data.uf].filter(Boolean).join("/");
+      $("bookingAddress").value = [data.logradouro, data.bairro, cityState].filter(Boolean).join(" - ");
+      lastBookingCep = cep;
+      status.textContent = "Endereço encontrado. Informe somente o número.";
+      status.className = "field-help success";
+      $("bookingAddressNumber").focus();
+    } catch (error) {
+      if ($("bookingPostalCode").value.replace(/\D/g, "") !== cep) return;
+      lastBookingCep = "";
+      status.textContent = error.name === "AbortError"
+        ? "A consulta demorou. Preencha o endereço manualmente."
+        : "CEP não encontrado. Confira ou preencha o endereço manualmente.";
+      status.className = "field-help error";
+      $("bookingAddress").focus();
+    } finally {
+      clearTimeout(timeout);
+      button.disabled = false;
+      button.textContent = "Buscar";
+    }
+  }
+
   async function loadPublicAvailability() {
     const dateTarget = $("publicDateList");
     const target = $("publicSlotList");
@@ -914,13 +961,20 @@
   }
 
   async function submitBooking() {
+    const addressNumber = $("bookingAddressNumber").value.trim();
+    const tutorAddress = [
+      $("bookingAddress").value.trim(),
+      addressNumber ? `nº ${addressNumber}` : "",
+      $("bookingAddressComplement").value.trim(),
+    ].filter(Boolean).join(" - ");
     const payload = {
       slotId: $("bookingSlotId").value,
       tutorName: $("bookingTutor").value.trim(),
       phone: $("bookingPhone").value,
       email: $("bookingEmail").value.trim(),
       tutorDocument: $("bookingDocument").value,
-      tutorAddress: $("bookingAddress").value.trim(),
+      tutorAddress,
+      addressNumber,
       postalCode: $("bookingPostalCode").value,
       patientName: $("bookingPatient").value.trim(),
       species: $("bookingSpecies").value,
@@ -2267,7 +2321,22 @@
   $("bookingPostalCode").addEventListener("input", (event) => {
     const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
     event.target.value = digits.replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
+    if (lastBookingCep && digits !== lastBookingCep) {
+      lastBookingCep = "";
+      $("bookingAddress").value = "";
+      $("bookingAddressNumber").value = "";
+    }
+    if (digits !== lastBookingCep) {
+      $("bookingCepStatus").textContent = digits.length === 8 ? "Consultando endereço…" : "Digite o CEP para preencher o endereço.";
+      $("bookingCepStatus").className = "field-help";
+    }
+    clearTimeout(event.target._cepTimer);
+    if (digits.length === 8) event.target._cepTimer = setTimeout(lookupBookingCep, 250);
   });
+  $("bookingPostalCode").addEventListener("blur", () => {
+    if ($("bookingPostalCode").value.replace(/\D/g, "").length === 8) lookupBookingCep();
+  });
+  $("lookupBookingCep").addEventListener("click", lookupBookingCep);
   $("copyPixBtn").addEventListener("click", async () => {
     if (!publicAppointment?.pixPayload) return;
     await navigator.clipboard.writeText(publicAppointment.pixPayload).catch(() => {});
