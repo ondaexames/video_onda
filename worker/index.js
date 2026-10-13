@@ -1,6 +1,7 @@
 const INDEX_HTML = __HTML_CONTENT__;
 const APP_JS = __APP_JS_CONTENT__;
 const PET_IMAGE_BASE64 = __PET_IMAGE_BASE64__;
+const ONDA_LOGO_BASE64 = __ONDA_LOGO_BASE64__;
 const encoder = new TextEncoder();
 
 function responseJson(data, status = 200) {
@@ -957,6 +958,10 @@ export default {
       if (url.pathname === "/app.js") return new Response(request.method === "HEAD" ? null : APP_JS, { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" } });
       if (url.pathname === "/mascotes-onda.png") {
         const bytes = Uint8Array.from(atob(PET_IMAGE_BASE64), (char) => char.charCodeAt(0));
+        return new Response(request.method === "HEAD" ? null : bytes, { headers: { "content-type": "image/png", "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
+      }
+      if (url.pathname === "/onda-logo.png") {
+        const bytes = Uint8Array.from(atob(ONDA_LOGO_BASE64), (char) => char.charCodeAt(0));
         return new Response(request.method === "HEAD" ? null : bytes, { headers: { "content-type": "image/png", "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
       }
       return new Response(request.method === "HEAD" ? null : INDEX_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin" } });
