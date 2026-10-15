@@ -921,6 +921,7 @@
       .calendar-day.selected .calendar-day-counts span { outline: 1px solid rgba(255,255,255,.7); }
       .history-row { grid-template-columns: 1fr; gap: 3px; }
     }
+    .team-hero{padding:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(135deg,#263b49,#315f7a);color:#fff}.team-hero h2{margin:0 0 6px;font-size:22px}.team-hero p{margin:0;color:#d7e5ec;font-size:13px}.team-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}.team-stat{padding:17px;border:1px solid var(--line);border-radius:15px;background:#fff}.team-stat span,.team-stat strong{display:block}.team-stat span{color:var(--muted);font-size:12px;font-weight:800}.team-stat strong{margin-top:5px;font-size:25px}.team-list{display:grid;gap:10px;padding:16px 18px 20px}.team-member{display:grid;grid-template-columns:44px minmax(180px,1.1fr) minmax(130px,.7fr) minmax(130px,.7fr) auto;gap:13px;align-items:center;padding:13px;border:1px solid #e5eaed;border-radius:14px;background:#fff}.team-avatar{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;color:#fff;background:#315f7a;font-weight:950}.team-member strong,.team-member small{display:block}.team-member small{margin-top:3px;color:var(--muted)}.role-badge,.status-badge{width:fit-content;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900}.role-badge.admin{color:#68440d;background:#fff2d7}.role-badge.veterinarian{color:#24546b;background:#e6f2f8}.role-badge.reception{color:#5f3b72;background:#f3e9f7}.status-badge.active{color:#17634e;background:#e4f5ef}.status-badge.inactive{color:#7d4141;background:#f9e8e8}.team-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.team-actions button{min-height:36px;padding:0 10px;border:1px solid #d4dde1;border-radius:10px;background:#f8fafb;cursor:pointer;font-weight:800}.security-layout{display:grid;grid-template-columns:.8fr 1.2fr;gap:18px;margin-top:18px}.security-note{padding:24px;color:#dce9ee;background:#314752}.security-note h2{margin:0 0 8px;color:#fff}.security-note p{margin:0;line-height:1.55;font-size:13px}.security-form{padding:22px}.password-guidance{margin:10px 0 0;color:var(--muted);font-size:12px}@media(max-width:850px){.team-member{grid-template-columns:44px 1fr auto}.team-member>:nth-child(3),.team-member>:nth-child(4){display:none}.security-layout{grid-template-columns:1fr}}@media(max-width:560px){.team-summary{grid-template-columns:1fr}.team-hero{align-items:stretch;flex-direction:column}.team-member{grid-template-columns:40px 1fr}.team-actions{grid-column:1/-1;justify-content:stretch}.team-actions button{flex:1}}
   </style>
 </head>
 <body>
@@ -988,10 +989,11 @@
                 <button type="button" data-registry-target="pets">Animais</button>
               </div>
               <button type="button" data-vet-route="configuracoes"><span class="nav-icon">⚙</span><span class="nav-label">Configurações</span></button>
+              <button type="button" data-vet-route="equipe"><span class="nav-icon">♟</span><span class="nav-label" id="teamNavLabel">Equipe e acessos</span></button>
             </nav>
             <div class="vet-sidebar-foot">
               <div class="sidebar-mascots"><img src="/mascotes-onda.png" alt="Pri e Negão" /><div><strong>Pri &amp; Negão</strong><span>Para sempre com a gente</span></div></div>
-              <div class="vet-user"><div class="avatar">DB</div><div><strong id="sidebarVetName">Dra. Bruna</strong><span id="sidebarVetCrmv">CRMV pendente</span></div></div>
+              <div class="vet-user"><div class="avatar" id="sidebarUserAvatar">DB</div><div><strong id="sidebarVetName">Dra. Bruna</strong><span id="sidebarVetCrmv">Administrador</span></div></div>
               <button class="logout-button" id="logoutButton" type="button"><span>Sair do sistema</span></button>
             </div>
           </aside>
@@ -1082,6 +1084,14 @@
                   <div class="settings-save"><span id="settingsStatus">Os horários ocupados serão preservados.</span><button class="new-appointment" id="saveScheduleSettings" type="submit">Salvar e publicar horários</button></div>
                 </div>
               </form>
+            </section>
+            <section class="vet-page" id="equipePage">
+              <div class="portal-card team-hero"><div><h2>Equipe Onda Animal</h2><p>Controle quem entra no sistema e mantenha os acessos organizados.</p></div><button class="new-appointment" id="newStaffUserButton" type="button">＋ Adicionar usuário</button></div>
+              <div id="teamAdminArea">
+                <div class="team-summary"><div class="team-stat"><span>USUÁRIOS ATIVOS</span><strong id="activeStaffCount">0</strong></div><div class="team-stat"><span>VETERINÁRIOS</span><strong id="veterinarianCount">0</strong></div><div class="team-stat"><span>RECEPÇÃO</span><strong id="receptionCount">0</strong></div></div>
+                <div class="portal-card"><div class="portal-card-head"><div><h2>Usuários do sistema</h2><span>Perfis, unidades e situação de cada acesso.</span></div></div><div class="team-list" id="staffUserList"><div class="portal-empty">Carregando equipe...</div></div></div>
+              </div>
+              <div class="security-layout"><div class="portal-card security-note"><div><h2>Minha segurança</h2><p>Ao salvar, as sessões antigas serão encerradas e você entrará novamente com a nova senha.</p></div></div><form class="portal-card security-form" id="changePasswordForm"><div class="portal-card-head"><div><h2>Alterar minha senha</h2><span>Esta alteração vale imediatamente.</span></div></div><div class="form-grid" style="grid-template-columns:1fr"><label>Senha atual<input id="currentStaffPassword" type="password" required /></label><label>Nova senha<input id="newStaffPassword" type="password" minlength="8" required /></label><label>Confirmar nova senha<input id="confirmStaffPassword" type="password" minlength="8" required /></label></div><p class="password-guidance">Use pelo menos 8 caracteres e evite senhas usadas em outros serviços.</p><button class="new-appointment" type="submit" style="margin-top:16px;width:100%">Salvar nova senha</button></form></div>
             </section>
           </div>
         </div>
@@ -1488,6 +1498,8 @@
     </form>
   </div>
 
+  <div class="modal-backdrop" id="staffUserModal" role="dialog" aria-modal="true"><form class="modal wide" id="staffUserForm"><div class="modal-icon">♟</div><h2 id="staffUserModalTitle">Adicionar usuário</h2><p id="staffUserModalSubtitle">Crie um acesso individual para a equipe.</p><input id="staffUserId" type="hidden" /><div class="form-grid"><label>Nome completo<input id="staffUserName" required /></label><label>E-mail profissional<input id="staffUserEmail" type="email" required /></label><label>Perfil<select id="staffUserRole"><option value="veterinarian">Veterinário(a)</option><option value="reception">Recepção</option><option value="admin">Administrador</option></select></label><label>Unidade<input id="staffUserUnit" required value="Gravataí" /></label><label>CRMV<input id="staffUserCrmv" placeholder="Para veterinário(a)" /></label><label id="staffTemporaryPasswordWrap">Senha temporária<input id="staffTemporaryPassword" type="password" minlength="8" /></label><label class="check-input full" id="staffActiveWrap"><input id="staffUserActive" type="checkbox" checked /> Usuário ativo</label></div><div class="modal-actions" style="margin-top:18px"><button class="secondary-wide" id="cancelStaffUser" type="button">Cancelar</button><button class="primary-wide" type="submit">Salvar usuário</button></div></form></div>
+  <div class="modal-backdrop" id="resetStaffPasswordModal" role="dialog" aria-modal="true"><form class="modal" id="resetStaffPasswordForm"><div class="modal-icon">🔒</div><h2>Redefinir senha</h2><p id="resetStaffPasswordSummary">Defina uma nova senha temporária.</p><input id="resetStaffUserId" type="hidden" /><label>Nova senha temporária<input id="resetStaffPassword" type="password" minlength="8" required /></label><div class="modal-actions" style="margin-top:18px"><button class="secondary-wide" id="cancelResetStaffPassword" type="button">Cancelar</button><button class="primary-wide" type="submit">Redefinir senha</button></div></form></div>
   <div class="modal-backdrop login-modal-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="login-shell">
       <section class="login-brand-panel">

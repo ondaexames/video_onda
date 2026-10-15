@@ -89,6 +89,8 @@
   let portalManagedSlots = [];
   let scheduleAudit = [];
   let portalClients = [];
+  let staffUsers = [];
+  let staffProfile = JSON.parse(sessionStorage.getItem("ondaStaffProfile") || "null");
   let selectedClientId = null;
   let lastRegistryCep = "";
   let lastBookingCep = "";
@@ -427,7 +429,7 @@
     professionalView.classList.remove("active");
     clientView.classList.remove("active");
     vetPortalView.classList.add("active");
-    const pages = { dashboard: "dashboardPage", agenda: "agendaPage", cadastros: "cadastrosPage", configuracoes: "configuracoesPage" };
+    const pages = { dashboard: "dashboardPage", agenda: "agendaPage", cadastros: "cadastrosPage", configuracoes: "configuracoesPage", equipe: "equipePage" };
     Object.entries(pages).forEach(([key, id]) => $(id).classList.toggle("active", key === route));
     document.querySelectorAll("[data-vet-route]").forEach((button) => button.classList.toggle("active", button.dataset.vetRoute === route));
     const copy = {
@@ -435,12 +437,14 @@
       agenda: ["Calendário da agenda", "Abra, feche e acompanhe os horários de cada dia."],
       cadastros: ["Cadastros", "Tutores e animais centralizados para seus atendimentos."],
       configuracoes: ["Configurações", "Defina quando os tutores poderão agendar pelo site."],
+      equipe: [staffProfile?.role === "admin" ? "Equipe e acessos" : "Minha conta", "Gerencie acessos e mantenha sua senha protegida."],
     }[route] || ["Agenda de hoje", "Acompanhe os atendimentos."];
     $("vetPageTitle").textContent = copy[0]; $("vetPageSubtitle").textContent = copy[1];
     $("cadastroSubnav").classList.toggle("open", route === "cadastros");
     if (route === "cadastros") loadClients();
     if (route === "agenda") loadManagedAvailability();
     if (route === "configuracoes") loadScheduleSettings();
+    if (route === "equipe") loadStaffUsers();
     if (updateHistory) history.pushState({ vetRoute: route }, "", route === "dashboard" ? "/vet" : `/vet/${route}`);
   }
 
@@ -2292,6 +2296,7 @@
     try {
       const data = await api("/api/staff-login", { method: "POST", body: JSON.stringify({ email: $("loginEmail").value, password: $("pinInput").value }) });
       sessionStorage.setItem("ondaStaffToken", data.token);
+      applyStaffProfile(data.professional);
       localStorage.setItem("ondaVetProfile", JSON.stringify({
         professionalName: data.professional.name,
         professionalCrmv: data.professional.crmv,
@@ -2808,6 +2813,7 @@
   });
   $("logoutButton").addEventListener("click", () => {
     sessionStorage.removeItem("ondaStaffToken");
+    sessionStorage.removeItem("ondaStaffProfile");
     clearInterval(reminderTimer);
     clearInterval(portalRefreshTimer);
     vetPortalView.classList.remove("active");
@@ -2817,7 +2823,7 @@
   });
   window.addEventListener("popstate", () => {
     if (!isProfessional || !sessionStorage.getItem("ondaStaffToken")) return;
-    const route = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/consulta") ? "consulta" : "dashboard";
+    const route = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/equipe") ? "equipe" : location.pathname.endsWith("/consulta") ? "consulta" : "dashboard";
     if (route === "consulta") showConsultationWorkspace(false); else setPortalRoute(route, false);
   });
 
@@ -2843,7 +2849,7 @@
       if (profile) { $("sidebarVetName").textContent = profile.professionalName || "Dra. Bruna"; $("sidebarVetCrmv").textContent = profile.professionalCrmv || "CRMV pendente"; }
       loadConsultations();
       startPortalAutoRefresh();
-      const initialRoute = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : "dashboard";
+      const initialRoute = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/equipe") ? "equipe" : "dashboard";
       setPortalRoute(initialRoute, false);
     }
     else {

@@ -89,6 +89,8 @@
   let portalManagedSlots = [];
   let scheduleAudit = [];
   let portalClients = [];
+  let staffUsers = [];
+  let staffProfile = JSON.parse(sessionStorage.getItem("ondaStaffProfile") || "null");
   let selectedClientId = null;
   let lastRegistryCep = "";
   let lastBookingCep = "";
@@ -427,7 +429,7 @@
     professionalView.classList.remove("active");
     clientView.classList.remove("active");
     vetPortalView.classList.add("active");
-    const pages = { dashboard: "dashboardPage", agenda: "agendaPage", cadastros: "cadastrosPage", configuracoes: "configuracoesPage" };
+    const pages = { dashboard: "dashboardPage", agenda: "agendaPage", cadastros: "cadastrosPage", configuracoes: "configuracoesPage", equipe: "equipePage" };
     Object.entries(pages).forEach(([key, id]) => $(id).classList.toggle("active", key === route));
     document.querySelectorAll("[data-vet-route]").forEach((button) => button.classList.toggle("active", button.dataset.vetRoute === route));
     const copy = {
@@ -435,12 +437,14 @@
       agenda: ["Calendário da agenda", "Abra, feche e acompanhe os horários de cada dia."],
       cadastros: ["Cadastros", "Tutores e animais centralizados para seus atendimentos."],
       configuracoes: ["Configurações", "Defina quando os tutores poderão agendar pelo site."],
+      equipe: [staffProfile?.role === "admin" ? "Equipe e acessos" : "Minha conta", "Gerencie acessos e mantenha sua senha protegida."],
     }[route] || ["Agenda de hoje", "Acompanhe os atendimentos."];
     $("vetPageTitle").textContent = copy[0]; $("vetPageSubtitle").textContent = copy[1];
     $("cadastroSubnav").classList.toggle("open", route === "cadastros");
     if (route === "cadastros") loadClients();
     if (route === "agenda") loadManagedAvailability();
     if (route === "configuracoes") loadScheduleSettings();
+    if (route === "equipe") loadStaffUsers();
     if (updateHistory) history.pushState({ vetRoute: route }, "", route === "dashboard" ? "/vet" : `/vet/${route}`);
   }
 
@@ -2292,6 +2296,7 @@
     try {
       const data = await api("/api/staff-login", { method: "POST", body: JSON.stringify({ email: $("loginEmail").value, password: $("pinInput").value }) });
       sessionStorage.setItem("ondaStaffToken", data.token);
+      applyStaffProfile(data.professional);
       localStorage.setItem("ondaVetProfile", JSON.stringify({
         professionalName: data.professional.name,
         professionalCrmv: data.professional.crmv,
@@ -2808,6 +2813,7 @@
   });
   $("logoutButton").addEventListener("click", () => {
     sessionStorage.removeItem("ondaStaffToken");
+    sessionStorage.removeItem("ondaStaffProfile");
     clearInterval(reminderTimer);
     clearInterval(portalRefreshTimer);
     vetPortalView.classList.remove("active");
@@ -2817,7 +2823,7 @@
   });
   window.addEventListener("popstate", () => {
     if (!isProfessional || !sessionStorage.getItem("ondaStaffToken")) return;
-    const route = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/consulta") ? "consulta" : "dashboard";
+    const route = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/equipe") ? "equipe" : location.pathname.endsWith("/consulta") ? "consulta" : "dashboard";
     if (route === "consulta") showConsultationWorkspace(false); else setPortalRoute(route, false);
   });
 
@@ -2843,7 +2849,7 @@
       if (profile) { $("sidebarVetName").textContent = profile.professionalName || "Dra. Bruna"; $("sidebarVetCrmv").textContent = profile.professionalCrmv || "CRMV pendente"; }
       loadConsultations();
       startPortalAutoRefresh();
-      const initialRoute = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : "dashboard";
+      const initialRoute = location.pathname.endsWith("/agenda") ? "agenda" : location.pathname.endsWith("/cadastros") ? "cadastros" : location.pathname.endsWith("/configuracoes") ? "configuracoes" : location.pathname.endsWith("/equipe") ? "equipe" : "dashboard";
       setPortalRoute(initialRoute, false);
     }
     else {
@@ -2858,4 +2864,17 @@
     showBookingView();
     loadPublicAvailability();
   }
+  function staffInitials(name){return String(name||"OA").trim().split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase()}
+  function applyStaffProfile(profile){if(!profile)return;staffProfile=profile;sessionStorage.setItem("ondaStaffProfile",JSON.stringify(profile));$("sidebarVetName").textContent=profile.name;$("sidebarVetCrmv").textContent=profile.roleLabel||profile.crmv||"Equipe";$("sidebarUserAvatar").textContent=staffInitials(profile.name);$("teamNavLabel").textContent=profile.role==="admin"?"Equipe e acessos":"Minha conta";document.querySelector(".user-copy strong").textContent=profile.name;document.querySelector(".user-copy span").textContent=`${profile.roleLabel||"Equipe"} • ${profile.unitName||"Onda Animal"}`}
+  function renderStaffUsers(){const list=$("staffUserList");list.replaceChildren();$("activeStaffCount").textContent=staffUsers.filter(u=>u.active).length;$("veterinarianCount").textContent=staffUsers.filter(u=>u.role==="veterinarian"&&u.active).length;$("receptionCount").textContent=staffUsers.filter(u=>u.role==="reception"&&u.active).length;staffUsers.forEach(user=>{const row=document.createElement("article");row.className="team-member";row.innerHTML=`<div class="team-avatar"></div><div class="team-identity"><strong></strong><small></small></div><div><span class="role-badge ${user.role}"></span><small>${user.mustChangePassword?"Troca de senha pendente":"Senha definida"}</small></div><div><span class="status-badge ${user.active?"active":"inactive"}">${user.active?"Ativo":"Inativo"}</span><small>${user.lastLoginAt?new Date(Number(user.lastLoginAt)*1000).toLocaleString("pt-BR"):"Ainda não acessou"}</small></div><div class="team-actions"><button type="button" data-staff-edit="${user.id}">Editar</button><button type="button" data-staff-reset="${user.id}">Redefinir senha</button></div>`;row.querySelector(".team-avatar").textContent=staffInitials(user.name);row.querySelector(".team-identity strong").textContent=user.name;row.querySelector(".team-identity small").textContent=`${user.email} • ${user.unitName||"Sem unidade"}`;row.querySelector(".role-badge").textContent=user.roleLabel;list.appendChild(row)});if(!staffUsers.length)list.innerHTML='<div class="portal-empty">Nenhum usuário cadastrado.</div>'}
+  async function loadStaffUsers(){const isAdmin=staffProfile?.role==="admin";$("teamAdminArea").hidden=!isAdmin;$("newStaffUserButton").hidden=!isAdmin;if(!isAdmin)return;try{const data=await api("/api/staff-users",{headers:staffHeaders()});staffUsers=data.users||[];renderStaffUsers()}catch(error){$("staffUserList").innerHTML=`<div class="portal-empty">${error.message}</div>`}}
+  function openStaffUserModal(user=null){$("staffUserForm").reset();$("staffUserId").value=user?.id||"";$("staffUserName").value=user?.name||"";$("staffUserEmail").value=user?.email||"";$("staffUserRole").value=user?.role||"veterinarian";$("staffUserUnit").value=user?.unitName||"Gravataí";$("staffUserCrmv").value=user?.crmv||"";$("staffUserActive").checked=user?user.active:true;$("staffTemporaryPasswordWrap").hidden=Boolean(user);$("staffTemporaryPassword").required=!user;$("staffActiveWrap").hidden=!user;$("staffUserModalTitle").textContent=user?"Editar usuário":"Adicionar usuário";$("staffUserModal").classList.add("open")}
+  $("newStaffUserButton").addEventListener("click",()=>openStaffUserModal());$("cancelStaffUser").addEventListener("click",()=>$("staffUserModal").classList.remove("open"));$("cancelResetStaffPassword").addEventListener("click",()=>$("resetStaffPasswordModal").classList.remove("open"));
+  $("staffUserList").addEventListener("click",event=>{const editId=event.target.closest("[data-staff-edit]")?.dataset.staffEdit;if(editId)return openStaffUserModal(staffUsers.find(u=>u.id===editId));const resetId=event.target.closest("[data-staff-reset]")?.dataset.staffReset;if(!resetId)return;const user=staffUsers.find(u=>u.id===resetId);$("resetStaffPasswordForm").reset();$("resetStaffUserId").value=resetId;$("resetStaffPasswordSummary").textContent=`Defina uma senha temporária para ${user?.name||"este usuário"}.`;$("resetStaffPasswordModal").classList.add("open")});
+  $("staffUserForm").addEventListener("submit",async event=>{event.preventDefault();const id=$("staffUserId").value,payload={name:$("staffUserName").value,email:$("staffUserEmail").value,role:$("staffUserRole").value,unitName:$("staffUserUnit").value,crmv:$("staffUserCrmv").value,active:$("staffUserActive").checked,password:$("staffTemporaryPassword").value};try{await api(id?`/api/staff-users/${encodeURIComponent(id)}`:"/api/staff-users",{method:id?"PATCH":"POST",headers:staffHeaders(),body:JSON.stringify(payload)});$("staffUserModal").classList.remove("open");showToast(id?"Usuário atualizado.":"Usuário criado.");await loadStaffUsers()}catch(error){showToast(error.message)}});
+  $("resetStaffPasswordForm").addEventListener("submit",async event=>{event.preventDefault();try{await api(`/api/staff-users/${encodeURIComponent($("resetStaffUserId").value)}/reset-password`,{method:"POST",headers:staffHeaders(),body:JSON.stringify({newPassword:$("resetStaffPassword").value})});$("resetStaffPasswordModal").classList.remove("open");showToast("Senha redefinida.");await loadStaffUsers()}catch(error){showToast(error.message)}});
+  $("changePasswordForm").addEventListener("submit",async event=>{event.preventDefault();if($("newStaffPassword").value!==$("confirmStaffPassword").value)return showToast("A confirmação não confere.");try{await api("/api/staff/password",{method:"POST",headers:staffHeaders(),body:JSON.stringify({currentPassword:$("currentStaffPassword").value,newPassword:$("newStaffPassword").value})});sessionStorage.removeItem("ondaStaffToken");sessionStorage.removeItem("ondaStaffProfile");vetPortalView.classList.remove("active");loginModal.classList.add("open");showToast("Senha alterada. Entre novamente.")}catch(error){showToast(error.message)}});
+  async function refreshStaffProfile(){if(!sessionStorage.getItem("ondaStaffToken"))return;try{applyStaffProfile((await api("/api/staff/me",{headers:staffHeaders()})).professional)}catch{sessionStorage.removeItem("ondaStaffToken");sessionStorage.removeItem("ondaStaffProfile")}}
+  if(staffProfile)applyStaffProfile(staffProfile);refreshStaffProfile();new MutationObserver(()=>{if(!loginModal.classList.contains("open"))refreshStaffProfile()}).observe(loginModal,{attributes:true,attributeFilter:["class"]});
+
 })();

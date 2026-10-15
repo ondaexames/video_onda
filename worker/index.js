@@ -31,25 +31,25 @@ async function sha256(value) {
   return bytesToBase64Url(new Uint8Array(digest));
 }
 
-async function signStaffToken(secret, email) {
-  const payload = `${Math.floor(Date.now() / 1000) + 43200}.${bytesToBase64Url(encoder.encode(email))}.${randomToken(12)}`;
+async function signStaffToken(secret, staff) {
+  const payload = JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 43200, userId: staff.id, email: staff.email, role: staff.role, version: Number(staff.token_version || 1) });
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
   return `${bytesToBase64Url(encoder.encode(payload))}.${bytesToBase64Url(new Uint8Array(signature))}`;
 }
 
 async function verifyStaffToken(token, secret) {
-  if (!token || !secret) return false;
+  if (!token || !secret) return null;
   const [payloadPart, signaturePart] = token.split(".");
-  if (!payloadPart || !signaturePart) return false;
+  if (!payloadPart || !signaturePart) return null;
   try {
     const payload = new TextDecoder().decode(base64UrlToBytes(payloadPart));
-    const expiresAt = Number(payload.split(".")[0]);
-    if (!Number.isFinite(expiresAt) || expiresAt < Date.now() / 1000) return false;
+    const claims = JSON.parse(payload);
+    if (!claims.userId || Number(claims.exp) < Date.now() / 1000) return null;
     const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
-    return crypto.subtle.verify("HMAC", key, base64UrlToBytes(signaturePart), encoder.encode(payload));
+    return await crypto.subtle.verify("HMAC", key, base64UrlToBytes(signaturePart), encoder.encode(payload)) ? claims : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -58,9 +58,26 @@ function bearerToken(request) {
   return value.startsWith("Bearer ") ? value.slice(7) : "";
 }
 
-async function requireStaff(request, env) {
-  return verifyStaffToken(bearerToken(request), env.TOKEN_SECRET);
+async function requireStaff(request, env, db) {
+  const claims = await verifyStaffToken(bearerToken(request), env.TOKEN_SECRET);
+  if (!claims) return null;
+  const staff = await db.prepare("SELECT * FROM staff_users WHERE id = ?").bind(claims.userId).first();
+  if (!staff || !Number(staff.active) || Number(staff.token_version) !== Number(claims.version)) return null;
+  return staff;
 }
+
+function normalizeEmail(value) { return String(value || "").trim().toLowerCase().slice(0, 180); }
+function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
+function validPassword(value) { return typeof value === "string" && value.length >= 8 && value.length <= 128; }
+async function passwordHash(password, salt) {
+  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: base64UrlToBytes(salt), iterations: 210000 }, key, 256);
+  return bytesToBase64Url(new Uint8Array(bits));
+}
+async function createPassword(password) { const salt = randomToken(16); return { salt, hash: await passwordHash(password, salt) }; }
+async function verifyPassword(password, staff) { return Boolean(staff?.password_salt && (await passwordHash(password, staff.password_salt)) === staff.password_hash); }
+const STAFF_ROLE_LABELS = { admin: "Administrador", veterinarian: "Veterinário(a)", reception: "Recepção" };
+function publicStaff(staff) { return { id: staff.id, name: staff.name, email: staff.email, role: staff.role, roleLabel: STAFF_ROLE_LABELS[staff.role] || "Equipe", crmv: staff.crmv || "", unitName: staff.unit_name || "", active: Boolean(staff.active), mustChangePassword: Boolean(staff.must_change_password), lastLoginAt: staff.last_login_at || null, createdAt: staff.created_at || null }; }
 
 async function readJson(request) {
   try { return await request.json(); } catch { return null; }
@@ -417,16 +434,28 @@ async function handlePublicApi(request, env, url, db) {
 
 async function handleStaffApi(request, env, url, db) {
   if (request.method === "POST" && url.pathname === "/api/staff-login") {
-    const body = await readJson(request);
-    const expectedEmail = String(env.VET_EMAIL || "veterinaria@onda-animal.com.br").trim().toLowerCase();
+    const body = await readJson(request) || {};
+    const expectedEmail = normalizeEmail(env.VET_EMAIL || "veterinaria@onda-animal.com.br");
     const expectedPassword = String(env.VET_PASSWORD || env.HOST_PIN || "");
-    const suppliedEmail = String(body?.email || expectedEmail).trim().toLowerCase();
-    const suppliedPassword = String(body?.password || body?.pin || "");
-    if (!expectedPassword || suppliedEmail !== expectedEmail || suppliedPassword !== expectedPassword) return responseJson({ error: "E-mail ou senha incorretos" }, 401);
-    return responseJson({ token: await signStaffToken(env.TOKEN_SECRET, expectedEmail), professional: { name: env.VET_NAME || "Dra. Bruna", crmv: env.VET_CRMV || "", email: expectedEmail, unitName: env.VET_UNIT || "Gravataí" } });
+    const suppliedEmail = normalizeEmail(body.email || expectedEmail), suppliedPassword = String(body.password || body.pin || "");
+    const total = await db.prepare("SELECT COUNT(*) AS total FROM staff_users").first();
+    if (Number(total?.total || 0) === 0 && expectedPassword && suppliedEmail === expectedEmail && suppliedPassword === expectedPassword) {
+      const credentials = await createPassword(expectedPassword), now = Math.floor(Date.now()/1000);
+      await db.prepare("INSERT INTO staff_users (id,name,email,password_salt,password_hash,role,crmv,unit_name,active,must_change_password,token_version,created_at,updated_at) VALUES (?,?,?,?,?,'admin',?,?,1,0,1,?,?)").bind(randomToken(12),cleanName(env.VET_NAME,"Dra. Bruna"),expectedEmail,credentials.salt,credentials.hash,cleanName(env.VET_CRMV),cleanName(env.VET_UNIT,"Gravataí"),now,now).run();
+    }
+    const staff = await db.prepare("SELECT * FROM staff_users WHERE email=?").bind(suppliedEmail).first();
+    if (!staff || !Number(staff.active) || !await verifyPassword(suppliedPassword,staff)) return responseJson({ error:"E-mail ou senha incorretos" },401);
+    const now=Math.floor(Date.now()/1000); await db.prepare("UPDATE staff_users SET last_login_at=?,updated_at=? WHERE id=?").bind(now,now,staff.id).run(); staff.last_login_at=now;
+    return responseJson({ token:await signStaffToken(env.TOKEN_SECRET,staff),professional:publicStaff(staff) });
   }
 
-  if (!await requireStaff(request, env)) return responseJson({ error: "Acesso da veterinária expirado" }, 401);
+  const staffSession=await requireStaff(request,env,db);
+  if (!staffSession) return responseJson({ error:"Sua sessão expirou. Entre novamente." },401);
+  if (request.method==="GET" && url.pathname==="/api/staff/me") return responseJson({ professional:publicStaff(staffSession) });
+  const staffManagementResponse=await handleStaffManagement(request,url,db,staffSession);
+  if (staffManagementResponse) return staffManagementResponse;
+  const clinicalRoute=url.pathname==="/api/appointments/start"||url.pathname==="/api/record"||url.pathname.startsWith("/api/prescriptions/");
+  if (staffSession.role==="reception"&&clinicalRoute) return responseJson({ error:"Este perfil não possui acesso ao atendimento clínico" },403);
 
   if (request.method === "GET" && url.pathname === "/api/schedule-settings") {
     const saved = await db.prepare("SELECT * FROM schedule_settings WHERE id = 'default'").first();

@@ -173,3 +173,7 @@ export const prescriptionDocuments = sqliteTable("prescription_documents", {
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const staffUsers = sqliteTable("staff_users", {
+  id:text("id").primaryKey(),name:text("name").notNull(),email:text("email").notNull().unique(),passwordSalt:text("password_salt").notNull(),passwordHash:text("password_hash").notNull(),role:text("role").notNull().default("reception"),crmv:text("crmv").notNull().default(""),unitName:text("unit_name").notNull().default("Gravataí"),active:integer("active",{mode:"boolean"}).notNull().default(true),mustChangePassword:integer("must_change_password",{mode:"boolean"}).notNull().default(true),tokenVersion:integer("token_version").notNull().default(1),lastLoginAt:integer("last_login_at"),createdAt:integer("created_at").notNull(),updatedAt:integer("updated_at").notNull(),
+});
